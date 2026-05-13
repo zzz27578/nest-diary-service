@@ -33,10 +33,10 @@
     </section>
 
     <section class="panel-grid">
-      <a class="panel" href="/diary">日记</a>
-      <a class="panel" href="/search">搜索</a>
-      <a class="panel" href="/media">媒体</a>
-      <a class="panel" href="/revisions">修订</a>
+      <a class="panel" href="/panel#diary">日记</a>
+      <a class="panel" href="/panel#search">搜索</a>
+      <a class="panel" href="/panel#media">媒体</a>
+      <a class="panel" href="/panel#revisions">修订</a>
     </section>
 
     <section class="section">
@@ -44,7 +44,7 @@
       {% if recent_entries %}
       <div class="list">
         {% for entry in recent_entries %}
-        <a class="row" href="/diary/{{ entry.date }}">
+        <a class="row" href="/panel?date={{ entry.date }}#diary">
           <span>{{ entry.date }}</span>
           <strong>{{ entry.normalized_title() }}</strong>
         </a>

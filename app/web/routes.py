@@ -62,45 +62,30 @@ def create_web_router(auth: WebSessionAuth, diary_service=None, media_service=No
         response.delete_cookie("nest_session")
         return response
 
-    @router.get("/diary", response_class=HTMLResponse)
-    async def diary_list(request: Request):
+    @router.get("/panel", response_class=HTMLResponse)
+    async def panel(request: Request, q: str = "", date: str = ""):
         redirect = require_login(request)
         if redirect:
             return redirect
         entries = diary_service.list_entries() if diary_service else []
-        return templates.TemplateResponse(request, "diary.html", {"entries": entries})
-
-    @router.get("/diary/{date}", response_class=HTMLResponse)
-    async def diary_detail(request: Request, date: str):
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        entry = diary_service.read_by_date(date)
-        return templates.TemplateResponse(request, "diary_detail.html", {"entry": entry})
-
-    @router.get("/search", response_class=HTMLResponse)
-    async def search_page(request: Request, q: str = ""):
-        redirect = require_login(request)
-        if redirect:
-            return redirect
+        selected_entry = None
+        if date and diary_service:
+            selected_entry = diary_service.read_by_date(date)
         results = diary_service.search(q, top_k=20) if q and diary_service else []
-        return templates.TemplateResponse(request, "search.html", {"q": q, "results": results})
-
-    @router.get("/media", response_class=HTMLResponse)
-    async def media_page(request: Request):
-        redirect = require_login(request)
-        if redirect:
-            return redirect
         manifests = media_service.list_manifests() if media_service else []
-        return templates.TemplateResponse(request, "media.html", {"manifests": manifests})
-
-    @router.get("/revisions", response_class=HTMLResponse)
-    async def revisions_page(request: Request):
-        redirect = require_login(request)
-        if redirect:
-            return redirect
         revisions = revision_service.list_revisions() if revision_service else []
-        return templates.TemplateResponse(request, "revisions.html", {"revisions": revisions})
+        return templates.TemplateResponse(
+            request,
+            "panel.html",
+            {
+                "entries": entries,
+                "selected_entry": selected_entry,
+                "q": q,
+                "results": results,
+                "manifests": manifests,
+                "revisions": revisions,
+            },
+        )
 
     return router
 

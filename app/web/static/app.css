@@ -150,6 +150,10 @@ button {
   margin-top: 32px;
 }
 
+.subsection {
+  margin-top: 18px;
+}
+
 .section h2 {
   margin: 0 0 12px;
 }
@@ -157,6 +161,11 @@ button {
 .list {
   display: grid;
   gap: 8px;
+}
+
+.compact {
+  max-height: 520px;
+  overflow: auto;
 }
 
 .row {
@@ -223,10 +232,18 @@ button {
   background: #fff;
 }
 
+.split {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
 @media (max-width: 680px) {
   .hero-strip,
   .row,
-  .searchbar {
+  .searchbar,
+  .split {
     grid-template-columns: 1fr;
   }
 

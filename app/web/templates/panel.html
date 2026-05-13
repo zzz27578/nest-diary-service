@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>小窝面板</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <main class="dashboard">
+    <nav class="crumb"><a href="/">小窝</a><span>/</span><strong>面板</strong></nav>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Nest Diary Panel</p>
+        <h1>一体化后台雏形</h1>
+      </div>
+      <form method="post" action="/logout">
+        <button type="submit">退出</button>
+      </form>
+    </header>
+
+    <section id="search" class="section">
+      <h2>搜索</h2>
+      <form class="searchbar" method="get" action="/panel#search">
+        <input name="q" value="{{ q }}" placeholder="关键词、人物、事情">
+        <button type="submit">搜索</button>
+      </form>
+      {% if q %}
+      <div class="list">
+        {% for result in results %}
+        <a class="row" href="/panel?date={{ result.date }}&q={{ q }}#diary">
+          <span>{{ result.date }}</span>
+          <strong>{{ result.title }}</strong>
+          <em>{{ result.snippet }}</em>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    <section id="diary" class="section split">
+      <div>
+        <h2>日记</h2>
+        {% if entries %}
+        <div class="list compact">
+          {% for entry in entries %}
+          <a class="row" href="/panel?date={{ entry.date }}#diary">
+            <span>{{ entry.date }}</span>
+            <strong>{{ entry.normalized_title() }}</strong>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">还没有日记。</p>
+        {% endif %}
+      </div>
+
+      <article class="entry">
+        {% if selected_entry %}
+        <p class="eyebrow">{{ selected_entry.date }}</p>
+        <h2>{{ selected_entry.normalized_title() }}</h2>
+        <div class="chips">
+          {% for tag in selected_entry.tags %}<span>{{ tag }}</span>{% endfor %}
+          {% for mood in selected_entry.mood %}<span>{{ mood }}</span>{% endfor %}
+        </div>
+        <pre>{{ selected_entry.body }}</pre>
+        {% else %}
+        <p class="muted">从左侧选择一篇日记，或者通过搜索结果进入。</p>
+        {% endif %}
+      </article>
+    </section>
+
+    <section id="media" class="section">
+      <h2>媒体</h2>
+      {% if manifests %}
+      {% for manifest in manifests %}
+      <div class="subsection">
+        <h3>{{ manifest.date }}</h3>
+        <div class="list">
+          {% for asset in manifest.assets %}
+          <div class="row">
+            <span>{{ asset.original_name }}</span>
+            <strong>{{ asset.sha256[:16] }}...</strong>
+            <em>{{ asset.path }}</em>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="muted">还没有媒体归档。</p>
+      {% endif %}
+    </section>
+
+    <section id="revisions" class="section">
+      <h2>修订</h2>
+      {% if revisions %}
+      <div class="list">
+        {% for item in revisions %}
+        <div class="row">
+          <span>{{ item.date }}</span>
+          <strong>{{ item.name }}</strong>
+          <em>{{ item.size }} bytes</em>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="muted">还没有修订记录。</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
