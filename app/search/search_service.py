@@ -23,6 +23,7 @@ class SearchService:
                 CREATE TABLE IF NOT EXISTS diary_meta (
                     date TEXT PRIMARY KEY,
                     title TEXT NOT NULL,
+                    body TEXT NOT NULL DEFAULT '',
                     tags TEXT NOT NULL,
                     people TEXT NOT NULL,
                     mood TEXT NOT NULL,
@@ -31,6 +32,9 @@ class SearchService:
                 )
                 """
             )
+            columns = [row[1] for row in conn.execute("PRAGMA table_info(diary_meta)").fetchall()]
+            if "body" not in columns:
+                conn.execute("ALTER TABLE diary_meta ADD COLUMN body TEXT NOT NULL DEFAULT ''")
             conn.execute(
                 """
                 CREATE VIRTUAL TABLE IF NOT EXISTS diary_fts
@@ -43,12 +47,13 @@ class SearchService:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO diary_meta
-                (date, title, tags, people, mood, importance, source)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (date, title, body, tags, people, mood, importance, source)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     entry.date,
                     entry.normalized_title(),
+                    entry.body,
                     ",".join(entry.tags),
                     ",".join(entry.people),
                     ",".join(entry.mood),
@@ -73,4 +78,27 @@ class SearchService:
                 """,
                 (query, top_k),
             ).fetchall()
+            if not rows:
+                like_query = f"%{query}%"
+                rows = conn.execute(
+                    """
+                    SELECT date, title, body
+                    FROM diary_meta
+                    WHERE body LIKE ? OR title LIKE ? OR tags LIKE ? OR people LIKE ?
+                    LIMIT ?
+                    """,
+                    (like_query, like_query, like_query, like_query, top_k),
+                ).fetchall()
+                return [
+                    {"date": row[0], "title": row[1], "snippet": self._make_snippet(row[2], query)}
+                    for row in rows
+                ]
         return [{"date": row[0], "title": row[1], "snippet": row[2]} for row in rows]
+
+    def _make_snippet(self, text: str, query: str) -> str:
+        index = text.find(query)
+        if index < 0:
+            return text[:80]
+        start = max(index - 24, 0)
+        end = min(index + len(query) + 48, len(text))
+        return text[start:end]
