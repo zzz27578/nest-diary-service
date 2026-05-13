@@ -1,4 +1,4 @@
-name: Nest Diary
+﻿name: Nest Diary
 tags:
   - 工具
   - 日记
@@ -16,5 +16,5 @@ additionalProperties:
   crossVersionUpdate: true
   limit: 1
   website: ""
-  github: ""
-  document: ""
+  github: "https://github.com/zzz27578/nest-diary-service"
+  document: "https://github.com/zzz27578/nest-diary-service/blob/master/docs/%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C.md"

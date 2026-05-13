@@ -1,30 +1,10 @@
 # 小窝日记服务
 
-这是小窝日记系统的本体服务。
+仓库地址：<https://github.com/zzz27578/nest-diary-service>
 
-它独立于 AstrBot 运行，负责网站、API、日记存储、媒体存储、搜索索引、版本追溯、旧日记迁移和归档。
+这是小窝日记系统的本体服务。它独立于 AstrBot 运行，负责网站、API、日记存储、媒体存储、搜索索引、版本追溯、旧日记迁移和归档。
 
-对应 AstrBot 连接插件：
-
-```text
-https://github.com/zzz27578/111
-```
-
-本服务仓库：
-
-```text
-https://github.com/zzz27578/222
-```
-
-## 第一版目标
-
-- 提供 bot 专属 API。
-- 提供密码保护的私密网页后台。
-- 用 Markdown 保存日记正文。
-- 用 SQLite FTS5 做全文搜索。
-- 用 SHA256 内容寻址保存图片、语音和附件。
-- 支持普通 Docker Compose 部署。
-- 可选提供 1Panel 本地应用包。
+对应 AstrBot 连接插件：<https://github.com/zzz27578/astrbot-plugin-nest-diary-connector>
 
 ## 当前已实现
 
@@ -38,11 +18,27 @@ https://github.com/zzz27578/222
 - 覆盖写入前 revision 快照
 - SHA256 内容寻址媒体仓库
 - 密码保护网页后台
+- 普通 Docker Compose 部署
 - 可选 1Panel 本地应用包
 
-## 运行方式
+## 普通 Docker 部署
 
-复制 `.env.example` 为 `.env`，修改密码和 token 后启动：
+复制环境变量文件：
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env`：
+
+```text
+NEST_PORT=28080
+NEST_ADMIN_PASSWORD=你的网页登录密码
+NEST_BOT_API_TOKEN=一串很长的 bot token
+TZ=Asia/Shanghai
+```
+
+启动：
 
 ```bash
 docker compose up -d
@@ -66,6 +62,22 @@ bot_api_token = 与 NEST_BOT_API_TOKEN 相同
 ```
 
 如果两个容器不在同一个 Docker 网络，可以改成宿主机或反代地址。
+
+## 1Panel 本地应用支持
+
+1Panel 本地应用包位于：
+
+```text
+deploy/1panel/nest-diary/
+```
+
+它使用镜像：
+
+```text
+ghcr.io/zzz27578/nest-diary-service:0.1.0
+```
+
+1Panel 只是可选部署方式；不使用 1Panel 时，直接使用本项目根目录的 `docker-compose.yml` 即可。
 
 ## 图片规范
 
