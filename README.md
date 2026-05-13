@@ -4,6 +4,18 @@
 
 它独立于 AstrBot 运行，负责网站、API、日记存储、媒体存储、搜索索引、版本追溯、旧日记迁移和归档。
 
+对应 AstrBot 连接插件：
+
+```text
+https://github.com/zzz27578/111
+```
+
+本服务仓库：
+
+```text
+https://github.com/zzz27578/222
+```
+
 ## 第一版目标
 
 - 提供 bot 专属 API。
@@ -14,6 +26,20 @@
 - 支持普通 Docker Compose 部署。
 - 可选提供 1Panel 本地应用包。
 
+## 当前已实现
+
+- Bot token API：`/api/v1/status`
+- 日记写入：`/api/v1/diary/write`
+- 日记读取：`/api/v1/diary/{date}`
+- 日记搜索：`/api/v1/diary/search`
+- 媒体归档：`/api/v1/media/attach`
+- Markdown 日记落盘
+- SQLite FTS5 + 中文 LIKE fallback 搜索
+- 覆盖写入前 revision 快照
+- SHA256 内容寻址媒体仓库
+- 密码保护网页后台
+- 可选 1Panel 本地应用包
+
 ## 运行方式
 
 复制 `.env.example` 为 `.env`，修改密码和 token 后启动：
@@ -23,6 +49,12 @@ docker compose up -d
 ```
 
 默认端口是 `28080`。日记、媒体、索引和修订记录会保存在当前目录的 `data/` 中。
+
+检查服务：
+
+```bash
+curl -H "Authorization: Bearer 你的token" http://127.0.0.1:28080/api/v1/status
+```
 
 ## AstrBot 连接
 
