@@ -91,6 +91,22 @@ deploy/1panel/nest-diary/logo.png
 
 其中 1Panel 图标是 1:1 的 `logo.png`，网页头像用于后台首页展示。
 
+## 本地 WebUI 原型
+
+为了方便直接改前端，仓库根目录提供了一个单文件原型：
+
+```text
+webui-prototype.html
+```
+
+它不需要启动服务，直接用浏览器打开就能看到小窝后台雏形。  
+这个文件用于快速调整视觉和布局；真正运行时的服务端模板在：
+
+```text
+app/web/templates/
+app/web/static/
+```
+
 ## 使用手册
 
 见：
