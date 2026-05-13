@@ -5,6 +5,8 @@ import hmac
 import secrets
 from dataclasses import dataclass
 
+from starlette.responses import RedirectResponse
+
 
 @dataclass
 class WebSessionAuth:
@@ -26,6 +28,11 @@ class WebSessionAuth:
             return False
         nonce, signature = token.rsplit(".", 1)
         return hmac.compare_digest(signature, self._sign(nonce))
+
+    def redirect_if_missing(self, token: str | None):
+        if not self.verify_session(token):
+            return RedirectResponse("/login", status_code=303)
+        return None
 
     def _sign(self, nonce: str) -> str:
         return hmac.new(

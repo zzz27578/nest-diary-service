@@ -69,15 +69,18 @@ class SearchService:
 
     def search(self, query: str, top_k: int = 8) -> list[dict]:
         with self._connect() as conn:
-            rows = conn.execute(
-                """
-                SELECT date, title, snippet(diary_fts, 2, '[', ']', '...', 18)
-                FROM diary_fts
-                WHERE diary_fts MATCH ?
-                LIMIT ?
-                """,
-                (query, top_k),
-            ).fetchall()
+            try:
+                rows = conn.execute(
+                    """
+                    SELECT date, title, snippet(diary_fts, 2, '[', ']', '...', 18)
+                    FROM diary_fts
+                    WHERE diary_fts MATCH ?
+                    LIMIT ?
+                    """,
+                    (query, top_k),
+                ).fetchall()
+            except sqlite3.OperationalError:
+                rows = []
             if not rows:
                 like_query = f"%{query}%"
                 rows = conn.execute(
