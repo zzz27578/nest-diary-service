@@ -1,0 +1,20 @@
+name: Nest Diary
+tags:
+  - 工具
+  - 日记
+  - AstrBot
+title: 小窝日记
+description: Bot 私密日记小窝服务，支持密码后台、Markdown 日记、媒体归档和搜索索引。
+additionalProperties:
+  key: nest-diary
+  name: Nest Diary
+  tags:
+    - Tool
+  shortDescZh: Bot 私密日记小窝服务
+  shortDescEn: Private diary nest service for bots
+  type: tool
+  crossVersionUpdate: true
+  limit: 1
+  website: ""
+  github: ""
+  document: ""

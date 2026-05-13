@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>小窝登录</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <main class="login-shell">
+    <form class="login-box" method="post" action="/login">
+      <h1>小窝</h1>
+      <input type="password" name="password" placeholder="管理员密码" autocomplete="current-password" autofocus>
+      {% if error %}
+      <p class="error">{{ error }}</p>
+      {% endif %}
+      <button type="submit">进入</button>
+    </form>
+  </main>
+</body>
+</html>

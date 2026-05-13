@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>小窝后台</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <main class="dashboard">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Nest Diary</p>
+        <h1>小窝后台</h1>
+      </div>
+      <form method="post" action="/logout">
+        <button type="submit">退出</button>
+      </form>
+    </header>
+
+    <section class="hero-strip">
+      <img src="/static/nest-avatar.png" alt="小窝头像">
+      <div>
+        <p>Bot 的私密日记巢穴</p>
+        <strong>写入、搜索、归档和媒体证据都从这里沉淀。</strong>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div><span>{{ entries_count }}</span><small>日记</small></div>
+      <div><span>{{ media_count }}</span><small>媒体</small></div>
+      <div><span>{{ revisions_count }}</span><small>修订</small></div>
+    </section>
+
+    <section class="panel-grid">
+      <a class="panel" href="/diary">日记</a>
+      <a class="panel" href="/search">搜索</a>
+      <a class="panel" href="/media">媒体</a>
+      <a class="panel" href="/revisions">修订</a>
+    </section>
+
+    <section class="section">
+      <h2>最近日记</h2>
+      {% if recent_entries %}
+      <div class="list">
+        {% for entry in recent_entries %}
+        <a class="row" href="/diary/{{ entry.date }}">
+          <span>{{ entry.date }}</span>
+          <strong>{{ entry.normalized_title() }}</strong>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="muted">还没有日记。等 bot 写第一篇，小窝就会亮起来。</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

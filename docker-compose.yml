@@ -1,0 +1,11 @@
+services:
+  nest-diary:
+    build: .
+    container_name: nest-diary
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${NEST_PORT:-28080}:28080"
+    volumes:
+      - ./data:/app/data

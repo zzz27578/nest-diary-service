@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>修订 - 小窝</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <main class="dashboard">
+    <nav class="crumb"><a href="/">小窝</a><span>/</span><strong>修订</strong></nav>
+    <h1>修订记录</h1>
+    {% if revisions %}
+    <div class="list">
+      {% for item in revisions %}
+      <div class="row">
+        <span>{{ item.date }}</span>
+        <strong>{{ item.name }}</strong>
+        <em>{{ item.size }} bytes</em>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">还没有修订记录。</p>
+    {% endif %}
+  </main>
+</body>
+</html>

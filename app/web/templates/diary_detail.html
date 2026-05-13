@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ entry.date }} - 小窝</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <main class="dashboard">
+    <nav class="crumb"><a href="/">小窝</a><span>/</span><a href="/diary">日记</a><span>/</span><strong>{{ entry.date }}</strong></nav>
+    <article class="entry">
+      <p class="eyebrow">{{ entry.date }}</p>
+      <h1>{{ entry.normalized_title() }}</h1>
+      <div class="chips">
+        {% for tag in entry.tags %}<span>{{ tag }}</span>{% endfor %}
+        {% for mood in entry.mood %}<span>{{ mood }}</span>{% endfor %}
+      </div>
+      <pre>{{ entry.body }}</pre>
+    </article>
+  </main>
+</body>
+</html>

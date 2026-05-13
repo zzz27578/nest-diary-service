@@ -1,0 +1,18 @@
+services:
+  nest-diary:
+    image: ghcr.io/yourname/nest-diary-service:0.1.0
+    container_name: ${CONTAINER_NAME}
+    restart: always
+    ports:
+      - "${PANEL_APP_PORT_HTTP}:28080"
+    environment:
+      - NEST_HOST=0.0.0.0
+      - NEST_PORT=28080
+      - NEST_DATA_DIR=/app/data
+      - NEST_ADMIN_PASSWORD=${NEST_ADMIN_PASSWORD}
+      - NEST_BOT_API_TOKEN=${NEST_BOT_API_TOKEN}
+      - TZ=${TIME_ZONE}
+    volumes:
+      - ./data:/app/data
+    labels:
+      createdBy: "Apps"

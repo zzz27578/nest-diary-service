@@ -1,0 +1,31 @@
+additionalProperties:
+  formFields:
+    - default: 28080
+      edit: true
+      envKey: PANEL_APP_PORT_HTTP
+      labelEn: Web Port
+      labelZh: Web 端口
+      required: true
+      rule: paramPort
+      type: number
+    - default: change-me
+      edit: true
+      envKey: NEST_ADMIN_PASSWORD
+      labelEn: Admin Password
+      labelZh: 管理员密码
+      required: true
+      type: password
+    - default: change-me-to-a-long-random-token
+      edit: true
+      envKey: NEST_BOT_API_TOKEN
+      labelEn: Bot API Token
+      labelZh: Bot API Token
+      required: true
+      type: password
+    - default: Asia/Shanghai
+      edit: true
+      envKey: TIME_ZONE
+      labelEn: Time Zone
+      labelZh: 时区
+      required: true
+      type: text
