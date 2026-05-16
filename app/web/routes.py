@@ -7,14 +7,20 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.models import DiaryEntry
+from app.models import DiaryEntry, PersonImpression
 from app.web_auth import WebSessionAuth
 
 WEB_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 
 
-def create_web_router(auth: WebSessionAuth, diary_service=None, media_service=None, revision_service=None) -> APIRouter:
+def create_web_router(
+    auth: WebSessionAuth,
+    diary_service=None,
+    media_service=None,
+    revision_service=None,
+    impression_service=None,
+) -> APIRouter:
     router = APIRouter()
 
     def require_login(request: Request):
@@ -36,7 +42,9 @@ def create_web_router(auth: WebSessionAuth, diary_service=None, media_service=No
                 "entries_count": len(entries),
                 "media_count": sum(len(item.get("assets", [])) for item in media),
                 "revisions_count": len(revisions),
+                "people_count": len(impression_service.list_people()) if impression_service else 0,
                 "recent_entries": entries[:5],
+                "active": "dashboard",
             },
         )
 
@@ -63,8 +71,42 @@ def create_web_router(auth: WebSessionAuth, diary_service=None, media_service=No
         response.delete_cookie("nest_session")
         return response
 
-    @router.get("/panel", response_class=HTMLResponse)
-    async def panel(request: Request, q: str = "", date: str = "", saved: str = "", error: str = ""):
+    @router.get("/write", response_class=HTMLResponse)
+    async def write_page(request: Request, date: str = "", saved: str = "", error: str = ""):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        selected_entry = None
+        if date and diary_service:
+            try:
+                selected_entry = diary_service.read_by_date(date)
+            except FileNotFoundError:
+                error = error or f"{date} 没有找到日记"
+        return templates.TemplateResponse(
+            request,
+            "write.html",
+            {
+                "selected_entry": selected_entry,
+                "saved": saved,
+                "error": error,
+                "active": "write",
+            },
+        )
+
+    @router.get("/search", response_class=HTMLResponse)
+    async def search_page(request: Request, q: str = ""):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        results = diary_service.search(q, top_k=20) if q and diary_service else []
+        return templates.TemplateResponse(
+            request,
+            "search.html",
+            {"q": q, "results": results, "active": "search"},
+        )
+
+    @router.get("/diary", response_class=HTMLResponse)
+    async def diary_page(request: Request, date: str = "", error: str = ""):
         redirect = require_login(request)
         if redirect:
             return redirect
@@ -75,25 +117,69 @@ def create_web_router(auth: WebSessionAuth, diary_service=None, media_service=No
                 selected_entry = diary_service.read_by_date(date)
             except FileNotFoundError:
                 error = error or f"{date} 没有找到日记"
-        results = diary_service.search(q, top_k=20) if q and diary_service else []
-        manifests = media_service.list_manifests() if media_service else []
-        revisions = revision_service.list_revisions() if revision_service else []
+        elif entries:
+            selected_entry = entries[0]
         return templates.TemplateResponse(
             request,
-            "panel.html",
+            "diary.html",
             {
                 "entries": entries,
                 "selected_entry": selected_entry,
-                "q": q,
-                "results": results,
-                "manifests": manifests,
-                "revisions": revisions,
-                "saved": saved,
                 "error": error,
+                "active": "diary",
             },
         )
 
-    @router.post("/panel/diary")
+    @router.get("/media", response_class=HTMLResponse)
+    async def media_page(request: Request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        manifests = media_service.list_manifests() if media_service else []
+        return templates.TemplateResponse(
+            request,
+            "media.html",
+            {"manifests": manifests, "active": "media"},
+        )
+
+    @router.get("/revisions", response_class=HTMLResponse)
+    async def revisions_page(request: Request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        revisions = revision_service.list_revisions() if revision_service else []
+        return templates.TemplateResponse(
+            request,
+            "revisions.html",
+            {"revisions": revisions, "active": "revisions"},
+        )
+
+    @router.get("/impressions", response_class=HTMLResponse)
+    async def impressions_page(request: Request, name: str = "", saved: str = "", error: str = ""):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        people = impression_service.list_people() if impression_service else []
+        selected_person = impression_service.get(name) if name and impression_service else None
+        if name and not selected_person:
+            error = error or f"{name} 没有找到人物印象"
+        return templates.TemplateResponse(
+            request,
+            "impressions.html",
+            {
+                "people": people,
+                "selected_person": selected_person,
+                "saved": saved,
+                "error": error,
+                "active": "impressions",
+            },
+        )
+
+    @router.get("/panel", response_class=HTMLResponse)
+    async def panel_redirect():
+        return RedirectResponse("/write", status_code=303)
+
+    @router.post("/write/diary")
     async def save_diary(
         request: Request,
         date: str = Form(...),
@@ -108,7 +194,7 @@ def create_web_router(auth: WebSessionAuth, diary_service=None, media_service=No
         if redirect:
             return redirect
         if not diary_service:
-            return RedirectResponse("/panel?error=diary-service-unavailable#editor", status_code=303)
+            return RedirectResponse("/write?error=diary-service-unavailable", status_code=303)
         entry = DiaryEntry(
             date=date.strip(),
             title=title.strip() or None,
@@ -120,7 +206,43 @@ def create_web_router(auth: WebSessionAuth, diary_service=None, media_service=No
             source="admin",
         )
         diary_service.write_diary(entry, reason="web_admin_update")
-        return RedirectResponse(f"/panel?date={entry.date}&saved=1#diary", status_code=303)
+        return RedirectResponse(f"/write?date={entry.date}&saved=1", status_code=303)
+
+    @router.post("/panel/diary")
+    async def save_diary_legacy(request: Request):
+        return RedirectResponse("/write", status_code=303)
+
+    @router.post("/impressions")
+    async def save_impression(
+        request: Request,
+        name: str = Form(...),
+        summary: str = Form(...),
+        traits: str = Form(""),
+        interests: str = Form(""),
+        preferences: str = Form(""),
+        relationship: str = Form(""),
+        evidence_dates: str = Form(""),
+        confidence: int = Form(3),
+        notes: str = Form(""),
+    ):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        if not impression_service:
+            return RedirectResponse("/impressions?error=impression-service-unavailable", status_code=303)
+        item = PersonImpression(
+            name=name.strip(),
+            summary=summary.strip(),
+            traits=_split_words(traits),
+            interests=_split_words(interests),
+            preferences=_split_words(preferences),
+            relationship=relationship.strip(),
+            evidence_dates=_split_words(evidence_dates),
+            confidence=max(1, min(int(confidence), 5)),
+            notes=notes.strip(),
+        )
+        impression_service.save(item)
+        return RedirectResponse(f"/impressions?name={item.name}&saved=1", status_code=303)
 
     return router
 

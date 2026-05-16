@@ -17,3 +17,17 @@ class DiaryEntry:
 
     def normalized_title(self) -> str:
         return self.title or self.date
+
+
+@dataclass
+class PersonImpression:
+    name: str
+    summary: str
+    traits: list[str] = field(default_factory=list)
+    interests: list[str] = field(default_factory=list)
+    preferences: list[str] = field(default_factory=list)
+    relationship: str = ""
+    evidence_dates: list[str] = field(default_factory=list)
+    confidence: int = 3
+    notes: str = ""
+    updated_at: str = ""

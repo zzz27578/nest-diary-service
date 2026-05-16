@@ -8,8 +8,9 @@ from pydantic import BaseModel, Field
 from .auth import verify_bearer_token
 from .config import load_settings
 from .diary.diary_service import DiaryService
+from .memory.impression_service import ImpressionService
 from .media.media_service import MediaService
-from .models import DiaryEntry
+from .models import DiaryEntry, PersonImpression
 from .paths import NestPaths
 from .web.routes import create_web_router, mount_static
 from .web_auth import WebSessionAuth
@@ -19,12 +20,21 @@ app = FastAPI(title="Nest Diary Service", version="0.1.0")
 paths = NestPaths(settings.data_dir)
 diary_service = DiaryService(paths)
 media_service = MediaService(paths)
+impression_service = ImpressionService(paths)
 web_auth = WebSessionAuth(
     admin_password=settings.admin_password,
     session_secret=settings.bot_api_token or "development-session-secret",
 )
 mount_static(app)
-app.include_router(create_web_router(web_auth, diary_service, media_service, diary_service.revisions))
+app.include_router(
+    create_web_router(
+        web_auth,
+        diary_service,
+        media_service,
+        diary_service.revisions,
+        impression_service,
+    )
+)
 
 
 class DiaryWriteRequest(BaseModel):
@@ -107,3 +117,46 @@ async def attach_media(payload: MediaAttachRequest, _auth: None = Depends(requir
         raise HTTPException(status_code=404, detail="Media source file not found")
     record = media_service.save_media(source, date=payload.date, original_name=payload.original_name)
     return {"status": "ok", "asset": record}
+
+
+class ImpressionWriteRequest(BaseModel):
+    name: str
+    summary: str
+    traits: list[str] = Field(default_factory=list)
+    interests: list[str] = Field(default_factory=list)
+    preferences: list[str] = Field(default_factory=list)
+    relationship: str = ""
+    evidence_dates: list[str] = Field(default_factory=list)
+    confidence: int = 3
+    notes: str = ""
+
+
+@app.get("/api/v1/impressions")
+async def list_impressions(_auth: None = Depends(require_bot_token)):
+    return {"items": [item.__dict__ for item in impression_service.list_people()]}
+
+
+@app.get("/api/v1/impressions/{name}")
+async def read_impression(name: str, _auth: None = Depends(require_bot_token)):
+    impression = impression_service.get(name)
+    if not impression:
+        raise HTTPException(status_code=404, detail="Person impression not found")
+    return impression.__dict__
+
+
+@app.post("/api/v1/impressions/write")
+async def write_impression(payload: ImpressionWriteRequest, _auth: None = Depends(require_bot_token)):
+    saved = impression_service.save(
+        PersonImpression(
+            name=payload.name.strip(),
+            summary=payload.summary.strip(),
+            traits=payload.traits,
+            interests=payload.interests,
+            preferences=payload.preferences,
+            relationship=payload.relationship.strip(),
+            evidence_dates=payload.evidence_dates,
+            confidence=payload.confidence,
+            notes=payload.notes.strip(),
+        )
+    )
+    return {"status": "ok", "item": saved.__dict__}

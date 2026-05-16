@@ -13,11 +13,16 @@
 - 日记读取：`/api/v1/diary/{date}`
 - 日记搜索：`/api/v1/diary/search`
 - 媒体归档：`/api/v1/media/attach`
+- 人物印象列表：`/api/v1/impressions`
+- 人物印象读取：`/api/v1/impressions/{name}`
+- 人物印象写入：`/api/v1/impressions/write`
 - Markdown 日记落盘
+- JSON 人物印象落盘
 - SQLite FTS5 + 中文 LIKE fallback 搜索
 - 覆盖写入前 revision 快照
 - SHA256 内容寻址媒体仓库
 - 密码保护网页后台
+- 后台真实路由：`/`、`/write`、`/search`、`/diary`、`/impressions`、`/media`、`/revisions`
 - 普通 Docker Compose 部署
 - 可选 1Panel 本地应用包
 
@@ -144,6 +149,16 @@ app/web/static/
 ```
 
 需要注意：静态原型只负责“看起来像真实页面”，不会真的登录、写日记或搜索。要测试真实功能，请使用“本地网页精修”里的 Python 服务方式。
+
+## 人物印象
+
+人物印象是日记之外的长期认识层，数据保存在：
+
+```text
+data/memory/people/
+```
+
+推荐让 bot 在写完日记后自行判断是否需要更新人物印象。只有当日记里出现稳定证据时才更新，例如性格特征、兴趣爱好、偏好、关系变化、长期需求或重要边界。没有新证据时不需要硬写。
 
 ## 使用手册
 

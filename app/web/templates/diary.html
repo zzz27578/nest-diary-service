@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>日记 - 小窝</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  {% from "_shell.html" import nav %}
+  <main class="app-shell">
+    {{ nav(active) }}
+    <section class="workspace">
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">Entries</p>
+          <h1>日记</h1>
+        </div>
+        <a class="primary-action" href="/write">写一篇</a>
+      </header>
+      {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+
+      <section class="section split">
+        <div>
+          {% if entries %}
+          <div class="list compact">
+            {% for entry in entries %}
+            <a class="row {{ 'selected' if selected_entry and entry.date == selected_entry.date else '' }}" href="/diary?date={{ entry.date }}">
+              <span>{{ entry.date }}</span>
+              <strong>{{ entry.normalized_title() }}</strong>
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="muted">还没有日记。</p>
+          {% endif %}
+        </div>
+        <article class="entry">
+          {% if selected_entry %}
+          <p class="eyebrow">{{ selected_entry.date }}</p>
+          <h2>{{ selected_entry.normalized_title() }}</h2>
+          <div class="chips">
+            {% for tag in selected_entry.tags %}<span>{{ tag }}</span>{% endfor %}
+            {% for mood in selected_entry.mood %}<span>{{ mood }}</span>{% endfor %}
+            {% for person in selected_entry.people %}<a href="/impressions?name={{ person | urlencode }}">{{ person }}</a>{% endfor %}
+          </div>
+          <pre>{{ selected_entry.body }}</pre>
+          <div class="form-actions">
+            <a class="primary-action" href="/write?date={{ selected_entry.date }}">编辑这篇</a>
+          </div>
+          {% else %}
+          <p class="muted">从左侧选择一篇日记。</p>
+          {% endif %}
+        </article>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
