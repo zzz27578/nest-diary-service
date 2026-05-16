@@ -114,7 +114,7 @@ deploy/1panel/nest-diary/
 它使用镜像：
 
 ```text
-ghcr.io/zzz27578/nest-diary-service:0.1.0
+ghcr.io/zzz27578/nest-diary-service:0.2.0
 ```
 
 1Panel 只是可选部署方式；不使用 1Panel 时，直接使用本项目根目录的 `docker-compose.yml` 即可。

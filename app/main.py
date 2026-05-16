@@ -18,7 +18,7 @@ from .web.routes import create_web_router, mount_static
 from .web_auth import WebSessionAuth
 
 settings = load_settings()
-app = FastAPI(title="Nest Diary Service", version="0.1.0")
+app = FastAPI(title="Nest Diary Service", version="0.2.0")
 paths = NestPaths(settings.data_dir)
 diary_service = DiaryService(paths)
 media_service = MediaService(paths)
