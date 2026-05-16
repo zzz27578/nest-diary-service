@@ -1,6 +1,6 @@
 ﻿services:
   nest-diary:
-    image: ghcr.io/zzz27578/nest-diary-service:0.2.0
+    image: ghcr.io/zzz27578/nest-diary-service:0.2.1
     container_name: ${CONTAINER_NAME}
     restart: always
     ports:

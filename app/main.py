@@ -14,16 +14,23 @@ from .media.media_service import MediaService
 from .models import DiaryEntry, PersonImpression
 from .paths import NestPaths
 from .settings_service import SecuritySettingsStore, ServiceSettingsStore
+from .version_service import VersionService
 from .web.routes import create_web_router, mount_static
 from .web_auth import WebSessionAuth
 
+APP_VERSION = "0.2.1"
 settings = load_settings()
-app = FastAPI(title="Nest Diary Service", version="0.2.0")
+app = FastAPI(title="Nest Diary Service", version=APP_VERSION)
 paths = NestPaths(settings.data_dir)
 diary_service = DiaryService(paths)
 media_service = MediaService(paths)
 impression_service = ImpressionService(paths)
 service_settings = ServiceSettingsStore(paths)
+version_service = VersionService(
+    current_version=APP_VERSION,
+    repo_root=Path(__file__).resolve().parents[1],
+    enable_self_update=settings.enable_self_update,
+)
 security_settings = SecuritySettingsStore(
     paths,
     default_admin_password=settings.admin_password or "12345678",
@@ -45,6 +52,7 @@ app.include_router(
         service_settings,
         security_settings,
         web_auth,
+        version_service,
         settings,
     )
 )
@@ -74,6 +82,7 @@ async def status(_auth: None = Depends(require_bot_token)):
     return {
         "status": "ok",
         "service": "nest-diary",
+        "version": APP_VERSION,
         "data_dir": str(settings.data_dir),
     }
 

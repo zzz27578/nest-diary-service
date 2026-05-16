@@ -111,6 +111,34 @@
       <section class="section">
         <div class="section-title">
           <div>
+            <p class="eyebrow">Version</p>
+            <h2>版本更新</h2>
+          </div>
+        </div>
+        {% if version_message %}
+        <div class="notice success">{{ version_message }}</div>
+        {% endif %}
+        <div class="settings-table">
+          <div><span>当前版本</span><strong>{{ version_current or (version_service.current_version if version_service else '') }}</strong></div>
+          <div><span>最新版本</span><strong>{{ version_latest or '点击检测后显示' }}</strong></div>
+          <div><span>自更新</span><strong>{{ '已启用' if version_service and version_service.enable_self_update else '未启用' }}</strong></div>
+        </div>
+        <div class="form-actions version-actions">
+          <form method="post" action="/settings/version/check">
+            <button type="submit">检测版本</button>
+          </form>
+          <form method="post" action="/settings/version/update">
+            <button type="submit" {{ '' if version_service and version_service.enable_self_update else 'disabled' }}>更新版本</button>
+          </form>
+          {% if not version_service or not version_service.enable_self_update %}
+          <span class="muted">Docker / 1Panel 部署请在面板或 compose 中拉取新镜像并重建容器。git 自更新需设置 NEST_ENABLE_SELF_UPDATE=true。</span>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <div>
             <p class="eyebrow">AstrBot Plugin</p>
             <h2>插件设置入口</h2>
           </div>

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -23,6 +24,7 @@ def create_web_router(
     settings_store=None,
     security_store=None,
     web_auth=None,
+    version_service=None,
     runtime_settings=None,
 ) -> APIRouter:
     router = APIRouter()
@@ -189,7 +191,15 @@ def create_web_router(
         )
 
     @router.get("/settings", response_class=HTMLResponse)
-    async def settings_page(request: Request, saved: str = "", error: str = ""):
+    async def settings_page(
+        request: Request,
+        saved: str = "",
+        error: str = "",
+        version_message: str = "",
+        version_current: str = "",
+        version_latest: str = "",
+        update_available: str = "",
+    ):
         redirect = require_login(request)
         if redirect:
             return redirect
@@ -202,6 +212,11 @@ def create_web_router(
                 "settings": ui_settings,
                 "security": security,
                 "runtime_settings": runtime_settings,
+                "version_service": version_service,
+                "version_message": version_message,
+                "version_current": version_current,
+                "version_latest": version_latest,
+                "update_available": update_available,
                 "saved": saved,
                 "error": error,
                 "active": "settings",
@@ -325,6 +340,41 @@ def create_web_router(
             web_auth.admin_password = saved_security.admin_password
             web_auth.session_secret = saved_security.bot_api_token or "development-session-secret"
         return RedirectResponse("/settings?saved=1", status_code=303)
+
+    @router.post("/settings/version/check")
+    async def check_version(request: Request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        if not version_service:
+            return RedirectResponse("/settings?error=version-service-unavailable", status_code=303)
+        try:
+            result = version_service.check_latest()
+            message = "发现新版本。" if result.update_available else "当前已经是最新版本。"
+            return RedirectResponse(
+                "/settings?"
+                f"version_message={quote(message)}"
+                f"&version_current={quote(result.current)}"
+                f"&version_latest={quote(result.latest)}"
+                f"&update_available={'1' if result.update_available else '0'}",
+                status_code=303,
+            )
+        except Exception as exc:
+            return RedirectResponse(f"/settings?error={quote('版本检测失败：' + str(exc))}", status_code=303)
+
+    @router.post("/settings/version/update")
+    async def update_version(request: Request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        if not version_service:
+            return RedirectResponse("/settings?error=version-service-unavailable", status_code=303)
+        result = version_service.update()
+        target = "version_message" if result.ok else "error"
+        detail = result.message
+        if result.output:
+            detail = f"{detail}\n{result.output}"
+        return RedirectResponse(f"/settings?{target}={quote(detail)}", status_code=303)
 
     return router
 

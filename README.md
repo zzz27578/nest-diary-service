@@ -44,6 +44,7 @@ cp .env.example .env
 NEST_PORT=28080
 NEST_ADMIN_PASSWORD=12345678
 NEST_BOT_API_TOKEN=
+NEST_ENABLE_SELF_UPDATE=false
 TZ=Asia/Shanghai
 ```
 
@@ -113,6 +114,15 @@ bot_api_token = 与 NEST_BOT_API_TOKEN 相同
 
 管理员密码只管网页登录；`Bot API Token` 只管 AstrBot 插件访问 API。两者不要混用。
 
+## 版本更新
+
+设置页提供两个真实动作：
+
+- `检测版本`：访问 GitHub 上的 `pyproject.toml`，比较当前版本和最新版本。
+- `更新版本`：默认禁用。只有设置 `NEST_ENABLE_SELF_UPDATE=true`，且服务运行目录本身是 git 仓库时，才会执行 `git pull --ff-only`。
+
+Docker / 1Panel 部署建议在面板里拉取新镜像并重建容器；网页里的更新按钮不会假装能控制宿主机 Docker。
+
 如果两个容器不在同一个 Docker 网络，可以改成宿主机或反代地址。
 
 ## 1Panel 本地应用支持
@@ -126,7 +136,7 @@ deploy/1panel/nest-diary/
 它使用镜像：
 
 ```text
-ghcr.io/zzz27578/nest-diary-service:0.2.0
+ghcr.io/zzz27578/nest-diary-service:0.2.1
 ```
 
 1Panel 只是可选部署方式；不使用 1Panel 时，直接使用本项目根目录的 `docker-compose.yml` 即可。
