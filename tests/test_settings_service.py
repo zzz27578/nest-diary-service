@@ -1,6 +1,6 @@
 from app.models import ServiceUiSettings
 from app.paths import NestPaths
-from app.settings_service import ServiceSettingsStore
+from app.settings_service import SecuritySettingsStore, ServiceSettingsStore
 
 
 def test_service_settings_roundtrip(tmp_path):
@@ -21,3 +21,14 @@ def test_service_settings_roundtrip(tmp_path):
     assert loaded.diary_archive_granularity == "month"
     assert not loaded.allow_media_refs
     assert loaded.impression_prompt == "custom prompt"
+
+
+def test_security_settings_default_and_update(tmp_path):
+    store = SecuritySettingsStore(NestPaths(tmp_path))
+
+    assert store.load().admin_password == "12345678"
+
+    updated = store.update(admin_password="new-password", bot_api_token="token-1")
+
+    assert updated.admin_password == "new-password"
+    assert store.load().bot_api_token == "token-1"

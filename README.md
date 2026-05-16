@@ -42,10 +42,12 @@ cp .env.example .env
 
 ```text
 NEST_PORT=28080
-NEST_ADMIN_PASSWORD=你的网页登录密码
-NEST_BOT_API_TOKEN=一串很长的 bot token
+NEST_ADMIN_PASSWORD=12345678
+NEST_BOT_API_TOKEN=
 TZ=Asia/Shanghai
 ```
+
+如果不填环境变量，网页初始管理员密码也是 `12345678`。第一次登录后请到 `/settings` 修改管理员密码，并生成或填写 `Bot API Token`。
 
 启动：
 
@@ -100,6 +102,16 @@ curl -H "Authorization: Bearer 你的token" http://127.0.0.1:28080/api/v1/status
 service_url = http://nest-diary:28080
 bot_api_token = 与 NEST_BOT_API_TOKEN 相同
 ```
+
+更直观的绑定方式：
+
+1. 先登录小窝网页后台，初始密码 `12345678`。
+2. 打开 `/settings`，修改管理员密码。
+3. 在“访问密钥”里生成或填写 `Bot API Token`。
+4. 把这串 token 复制到 AstrBot 插件配置的 `bot_api_token`。
+5. 插件里的 `service_url` 填小窝服务地址，例如 `http://nest-diary:28080`。
+
+管理员密码只管网页登录；`Bot API Token` 只管 AstrBot 插件访问 API。两者不要混用。
 
 如果两个容器不在同一个 Docker 网络，可以改成宿主机或反代地址。
 
@@ -177,6 +189,7 @@ data/
   revisions/diary/YYYY/MM/YYYY-MM-DD/*.md
   index/nest.sqlite                   # 搜索索引，可重建
   settings/service-ui.json            # 本体网页设置
+  settings/security.json              # 管理员密码和 Bot API Token
 ```
 
 不丢数据的关键：

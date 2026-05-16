@@ -6,14 +6,14 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from .auth import verify_bearer_token
+from .auth import verify_bearer_token_from_store
 from .config import load_settings
 from .diary.diary_service import DiaryService
 from .memory.impression_service import ImpressionService
 from .media.media_service import MediaService
 from .models import DiaryEntry, PersonImpression
 from .paths import NestPaths
-from .settings_service import ServiceSettingsStore
+from .settings_service import SecuritySettingsStore, ServiceSettingsStore
 from .web.routes import create_web_router, mount_static
 from .web_auth import WebSessionAuth
 
@@ -24,9 +24,15 @@ diary_service = DiaryService(paths)
 media_service = MediaService(paths)
 impression_service = ImpressionService(paths)
 service_settings = ServiceSettingsStore(paths)
+security_settings = SecuritySettingsStore(
+    paths,
+    default_admin_password=settings.admin_password or "12345678",
+    default_bot_api_token=settings.bot_api_token,
+)
+initial_security = security_settings.load()
 web_auth = WebSessionAuth(
-    admin_password=settings.admin_password,
-    session_secret=settings.bot_api_token or "development-session-secret",
+    admin_password=initial_security.admin_password,
+    session_secret=initial_security.bot_api_token or "development-session-secret",
 )
 mount_static(app)
 app.include_router(
@@ -37,6 +43,8 @@ app.include_router(
         diary_service.revisions,
         impression_service,
         service_settings,
+        security_settings,
+        web_auth,
         settings,
     )
 )
@@ -58,7 +66,7 @@ class DiaryWriteRequest(BaseModel):
 
 
 def require_bot_token(authorization: str | None = Header(default=None)) -> None:
-    verify_bearer_token(settings.bot_api_token, authorization)
+    verify_bearer_token_from_store(lambda: security_settings.load().bot_api_token, authorization)
 
 
 @app.get("/api/v1/status")

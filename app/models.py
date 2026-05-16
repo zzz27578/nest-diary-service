@@ -45,3 +45,9 @@ class ServiceUiSettings:
         "这篇日记是否提供了关于某个人的稳定新证据。"
         "如果有，就更新人物印象；如果没有，不要硬写。"
     )
+
+
+@dataclass
+class SecuritySettings:
+    admin_password: str = "12345678"
+    bot_api_token: str = ""

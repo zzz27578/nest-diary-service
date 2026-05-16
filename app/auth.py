@@ -12,3 +12,6 @@ def verify_bearer_token(expected_token: str, authorization: str | None = Header(
     if token != expected_token:
         raise HTTPException(status_code=403, detail="Invalid bot token")
 
+
+def verify_bearer_token_from_store(token_getter, authorization: str | None = Header(default=None)) -> None:
+    verify_bearer_token(token_getter(), authorization)

@@ -21,6 +21,8 @@ def create_web_router(
     revision_service=None,
     impression_service=None,
     settings_store=None,
+    security_store=None,
+    web_auth=None,
     runtime_settings=None,
 ) -> APIRouter:
     router = APIRouter()
@@ -53,7 +55,7 @@ def create_web_router(
 
     @router.get("/login", response_class=HTMLResponse)
     async def login_page(request: Request):
-        return templates.TemplateResponse(request, "login.html", {"error": ""})
+        return templates.TemplateResponse(request, "login.html", {"error": "", "default_password": "12345678"})
 
     @router.post("/login")
     async def login(request: Request, password: str = Form(...)):
@@ -61,7 +63,7 @@ def create_web_router(
             return templates.TemplateResponse(
                 request,
                 "login.html",
-                {"error": "密码不对"},
+                {"error": "密码不对", "default_password": "12345678"},
                 status_code=401,
             )
         response = RedirectResponse("/", status_code=303)
@@ -192,11 +194,13 @@ def create_web_router(
         if redirect:
             return redirect
         ui_settings = settings_store.load() if settings_store else ServiceUiSettings()
+        security = security_store.load() if security_store else None
         return templates.TemplateResponse(
             request,
             "settings.html",
             {
                 "settings": ui_settings,
+                "security": security,
                 "runtime_settings": runtime_settings,
                 "saved": saved,
                 "error": error,
@@ -298,6 +302,28 @@ def create_web_router(
                 impression_prompt=impression_prompt.strip(),
             )
         )
+        return RedirectResponse("/settings?saved=1", status_code=303)
+
+    @router.post("/settings/security")
+    async def save_security_settings(
+        request: Request,
+        admin_password: str = Form(""),
+        bot_api_token: str = Form(""),
+        generate_bot_api_token: str = Form(""),
+    ):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        if not security_store:
+            return RedirectResponse("/settings?error=security-store-unavailable", status_code=303)
+        token = security_store.generate_token() if generate_bot_api_token == "on" else bot_api_token.strip()
+        saved_security = security_store.update(
+            admin_password=admin_password.strip() or None,
+            bot_api_token=token,
+        )
+        if web_auth:
+            web_auth.admin_password = saved_security.admin_password
+            web_auth.session_secret = saved_security.bot_api_token or "development-session-secret"
         return RedirectResponse("/settings?saved=1", status_code=303)
 
     return router
