@@ -48,7 +48,14 @@ docker compose up -d
 
 ## 本地网页精修
 
-如果电脑上没有 Docker，可以直接用 Python 跑同一套后端和模板。这样本地修改 `app/web/templates/`、`app/web/static/` 后刷新浏览器就能看到，和服务器运行的页面来源一致。
+本项目现在提供两种本地查看方式，按用途选择：
+
+- 只看设计、改布局、改颜色：直接双击打开仓库根目录的 `webui-prototype.html`。
+- 看真实登录、真实写入、真实搜索：用 Python 跑本地服务，然后打开 `http://127.0.0.1:28080`。
+
+`webui-prototype.html` 是静态预览页，不需要后端请求，所以双击就能看。它复用真实页面的 `app/web/static/app.css` 和图片资源，用来快速打磨界面。
+
+如果要确认“服务器上最终跑出来的真实页面”，就需要启动本地 Python 服务。这样本地修改 `app/web/templates/`、`app/web/static/` 后刷新浏览器就能看到，和服务器运行的页面来源一致。
 
 PowerShell 示例：
 
@@ -117,19 +124,26 @@ deploy/1panel/nest-diary/logo.png
 
 ## 本地 WebUI 原型
 
-为了方便直接改前端，仓库根目录提供了一个单文件原型：
+为了方便直接改前端，仓库根目录提供了一个可直接打开的静态原型：
 
 ```text
 webui-prototype.html
 ```
 
-它不需要启动服务，直接用浏览器打开就能看到小窝后台雏形。  
-这个文件用于快速调整视觉和布局；真正运行时的服务端模板在：
+打开方式：
+
+```text
+C:\Users\29505\Desktop\记忆插件\nest-diary-service\webui-prototype.html
+```
+
+它不需要启动服务，直接用浏览器打开就能看到小窝后台雏形。这个文件用于快速调整视觉和布局；真正运行时的服务端模板在：
 
 ```text
 app/web/templates/
 app/web/static/
 ```
+
+需要注意：静态原型只负责“看起来像真实页面”，不会真的登录、写日记或搜索。要测试真实功能，请使用“本地网页精修”里的 Python 服务方式。
 
 ## 使用手册
 
