@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>设置 - 小窝</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  {% from "_shell.html" import nav, alerts %}
+  <main class="app-shell">
+    {{ nav(active) }}
+    <section class="workspace">
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">Settings</p>
+          <h1>设置</h1>
+        </div>
+      </header>
+      {{ alerts(saved, error) }}
+
+      <section class="section">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Service</p>
+            <h2>本体服务设置</h2>
+          </div>
+        </div>
+        <form class="editor-form" method="post" action="/settings">
+          <div class="form-grid">
+            <label>
+              默认搜索条数
+              <input name="search_default_top_k" type="number" min="1" max="50" value="{{ settings.search_default_top_k }}">
+            </label>
+            <label>
+              归档粒度
+              <select name="diary_archive_granularity">
+                <option value="day" {{ 'selected' if settings.diary_archive_granularity == 'day' else '' }}>年月日</option>
+                <option value="month" {{ 'selected' if settings.diary_archive_granularity == 'month' else '' }}>年月</option>
+                <option value="year" {{ 'selected' if settings.diary_archive_granularity == 'year' else '' }}>年</option>
+              </select>
+            </label>
+          </div>
+          <label class="check-row">
+            <input name="allow_media_refs" type="checkbox" {{ 'checked' if settings.allow_media_refs else '' }}>
+            允许日记填写图片 / 媒体引用
+          </label>
+          <label class="check-row">
+            <input name="show_impression_prompt" type="checkbox" {{ 'checked' if settings.show_impression_prompt else '' }}>
+            写日记页显示人物印象提示
+          </label>
+          <label>
+            人物印象提示词
+            <textarea name="impression_prompt">{{ settings.impression_prompt }}</textarea>
+          </label>
+          <div class="form-actions">
+            <button type="submit">保存本体设置</button>
+            <span class="muted">保存到 data/settings/service-ui.json。</span>
+          </div>
+        </form>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Runtime</p>
+            <h2>运行环境</h2>
+          </div>
+        </div>
+        <div class="settings-table">
+          <div><span>数据目录</span><strong>{{ runtime_settings.data_dir if runtime_settings else '' }}</strong></div>
+          <div><span>服务端口</span><strong>{{ runtime_settings.port if runtime_settings else '' }}</strong></div>
+          <div><span>Bot Token</span><strong>{{ '已设置' if runtime_settings and runtime_settings.bot_api_token else '未设置' }}</strong></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">AstrBot Plugin</p>
+            <h2>插件设置入口</h2>
+          </div>
+        </div>
+        <p class="muted">下面这些属于 AstrBot 插件仓库配置，需要在 AstrBot 插件配置页修改，不在本体网站保存：服务地址、bot token、每日提示时间、提醒开关、目标会话 origin。</p>
+        <div class="settings-table">
+          <div><span>配置文件</span><strong>astrbot-plugin-nest-diary-connector/_conf_schema.json</strong></div>
+          <div><span>绑定方式</span><strong>在目标会话发送 /小窝绑定提醒，然后把返回的 origin 填入 daily_target_origin。</strong></div>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

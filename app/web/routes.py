@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.models import DiaryEntry, PersonImpression
+from app.models import DiaryEntry, PersonImpression, ServiceUiSettings
 from app.web_auth import WebSessionAuth
 
 WEB_DIR = Path(__file__).parent
@@ -20,6 +20,8 @@ def create_web_router(
     media_service=None,
     revision_service=None,
     impression_service=None,
+    settings_store=None,
+    runtime_settings=None,
 ) -> APIRouter:
     router = APIRouter()
 
@@ -45,6 +47,7 @@ def create_web_router(
                 "people_count": len(impression_service.list_people()) if impression_service else 0,
                 "recent_entries": entries[:5],
                 "active": "dashboard",
+                "archive": diary_service.archive_tree() if diary_service else [],
             },
         )
 
@@ -90,6 +93,7 @@ def create_web_router(
                 "saved": saved,
                 "error": error,
                 "active": "write",
+                "ui_settings": settings_store.load() if settings_store else ServiceUiSettings(),
             },
         )
 
@@ -98,11 +102,17 @@ def create_web_router(
         redirect = require_login(request)
         if redirect:
             return redirect
-        results = diary_service.search(q, top_k=20) if q and diary_service else []
+        ui_settings = settings_store.load() if settings_store else ServiceUiSettings()
+        results = diary_service.search(q, top_k=ui_settings.search_default_top_k) if q and diary_service else []
         return templates.TemplateResponse(
             request,
             "search.html",
-            {"q": q, "results": results, "active": "search"},
+            {
+                "q": q,
+                "results": results,
+                "active": "search",
+                "archive": diary_service.archive_tree() if diary_service else [],
+            },
         )
 
     @router.get("/diary", response_class=HTMLResponse)
@@ -127,6 +137,7 @@ def create_web_router(
                 "selected_entry": selected_entry,
                 "error": error,
                 "active": "diary",
+                "archive": diary_service.archive_tree() if diary_service else [],
             },
         )
 
@@ -175,6 +186,24 @@ def create_web_router(
             },
         )
 
+    @router.get("/settings", response_class=HTMLResponse)
+    async def settings_page(request: Request, saved: str = "", error: str = ""):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        ui_settings = settings_store.load() if settings_store else ServiceUiSettings()
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {
+                "settings": ui_settings,
+                "runtime_settings": runtime_settings,
+                "saved": saved,
+                "error": error,
+                "active": "settings",
+            },
+        )
+
     @router.get("/panel", response_class=HTMLResponse)
     async def panel_redirect():
         return RedirectResponse("/write", status_code=303)
@@ -188,6 +217,7 @@ def create_web_router(
         mood: str = Form(""),
         tags: str = Form(""),
         people: str = Form(""),
+        media_refs: str = Form(""),
         importance: int = Form(3),
     ):
         redirect = require_login(request)
@@ -202,6 +232,7 @@ def create_web_router(
             mood=_split_words(mood),
             tags=_split_words(tags),
             people=_split_words(people),
+            media_refs=_split_lines(media_refs),
             importance=max(1, min(int(importance), 5)),
             source="admin",
         )
@@ -244,6 +275,31 @@ def create_web_router(
         impression_service.save(item)
         return RedirectResponse(f"/impressions?name={item.name}&saved=1", status_code=303)
 
+    @router.post("/settings")
+    async def save_settings(
+        request: Request,
+        search_default_top_k: int = Form(20),
+        diary_archive_granularity: str = Form("day"),
+        allow_media_refs: str = Form(""),
+        show_impression_prompt: str = Form(""),
+        impression_prompt: str = Form(""),
+    ):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        if not settings_store:
+            return RedirectResponse("/settings?error=settings-store-unavailable", status_code=303)
+        settings_store.save(
+            ServiceUiSettings(
+                search_default_top_k=search_default_top_k,
+                diary_archive_granularity=diary_archive_granularity,
+                allow_media_refs=allow_media_refs == "on",
+                show_impression_prompt=show_impression_prompt == "on",
+                impression_prompt=impression_prompt.strip(),
+            )
+        )
+        return RedirectResponse("/settings?saved=1", status_code=303)
+
     return router
 
 
@@ -254,3 +310,7 @@ def mount_static(app) -> None:
 def _split_words(value: str) -> list[str]:
     normalized = value.replace("，", ",").replace("、", ",")
     return [item.strip() for item in normalized.split(",") if item.strip()]
+
+
+def _split_lines(value: str) -> list[str]:
+    return [item.strip() for item in value.splitlines() if item.strip()]

@@ -87,10 +87,10 @@ class SearchService:
                     """
                     SELECT date, title, body
                     FROM diary_meta
-                    WHERE body LIKE ? OR title LIKE ? OR tags LIKE ? OR people LIKE ?
+                    WHERE date LIKE ? OR body LIKE ? OR title LIKE ? OR tags LIKE ? OR people LIKE ?
                     LIMIT ?
                     """,
-                    (like_query, like_query, like_query, like_query, top_k),
+                    (like_query, like_query, like_query, like_query, like_query, top_k),
                 ).fetchall()
                 return [
                     {"date": row[0], "title": row[1], "snippet": self._make_snippet(row[2], query)}

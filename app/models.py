@@ -11,6 +11,7 @@ class DiaryEntry:
     mood: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     people: list[str] = field(default_factory=list)
+    media_refs: list[str] = field(default_factory=list)
     importance: int = 3
     source: str = "bot"
     revision: int = 1
@@ -31,3 +32,16 @@ class PersonImpression:
     confidence: int = 3
     notes: str = ""
     updated_at: str = ""
+
+
+@dataclass
+class ServiceUiSettings:
+    search_default_top_k: int = 20
+    diary_archive_granularity: str = "day"
+    allow_media_refs: bool = True
+    show_impression_prompt: bool = True
+    impression_prompt: str = (
+        "写完日记后，依据你自己的角色设定和当天日记内容判断："
+        "这篇日记是否提供了关于某个人的稳定新证据。"
+        "如果有，就更新人物印象；如果没有，不要硬写。"
+    )

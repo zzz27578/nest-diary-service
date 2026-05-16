@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .auth import verify_bearer_token
@@ -12,6 +13,7 @@ from .memory.impression_service import ImpressionService
 from .media.media_service import MediaService
 from .models import DiaryEntry, PersonImpression
 from .paths import NestPaths
+from .settings_service import ServiceSettingsStore
 from .web.routes import create_web_router, mount_static
 from .web_auth import WebSessionAuth
 
@@ -21,6 +23,7 @@ paths = NestPaths(settings.data_dir)
 diary_service = DiaryService(paths)
 media_service = MediaService(paths)
 impression_service = ImpressionService(paths)
+service_settings = ServiceSettingsStore(paths)
 web_auth = WebSessionAuth(
     admin_password=settings.admin_password,
     session_secret=settings.bot_api_token or "development-session-secret",
@@ -33,6 +36,8 @@ app.include_router(
         media_service,
         diary_service.revisions,
         impression_service,
+        service_settings,
+        settings,
     )
 )
 
@@ -44,6 +49,7 @@ class DiaryWriteRequest(BaseModel):
     mood: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
+    media_refs: list[str] = Field(default_factory=list)
     importance: int = 3
     source: str = "bot"
     reason: str = ""
@@ -73,6 +79,7 @@ async def write_diary(payload: DiaryWriteRequest, _auth: None = Depends(require_
         mood=payload.mood,
         tags=payload.tags,
         people=payload.people,
+        media_refs=payload.media_refs,
         importance=payload.importance,
         source=payload.source,
     )
@@ -83,6 +90,11 @@ async def write_diary(payload: DiaryWriteRequest, _auth: None = Depends(require_
 @app.get("/api/v1/diary/search")
 async def search_diary(q: str, top_k: int = 8, _auth: None = Depends(require_bot_token)):
     return {"query": q, "results": diary_service.search(q, top_k=top_k)}
+
+
+@app.get("/api/v1/diary/archive")
+async def diary_archive(_auth: None = Depends(require_bot_token)):
+    return {"items": diary_service.archive_tree()}
 
 
 @app.get("/api/v1/diary/{date}")
@@ -97,6 +109,7 @@ async def read_diary(date: str, _auth: None = Depends(require_bot_token)):
         "mood": entry.mood,
         "tags": entry.tags,
         "people": entry.people,
+        "media_refs": entry.media_refs,
         "importance": entry.importance,
         "source": entry.source,
         "revision": entry.revision,
@@ -117,6 +130,19 @@ async def attach_media(payload: MediaAttachRequest, _auth: None = Depends(requir
         raise HTTPException(status_code=404, detail="Media source file not found")
     record = media_service.save_media(source, date=payload.date, original_name=payload.original_name)
     return {"status": "ok", "asset": record}
+
+
+@app.get("/api/v1/media/by-date/{date}")
+async def list_media_by_date(date: str, _auth: None = Depends(require_bot_token)):
+    return media_service.list_by_date(date)
+
+
+@app.get("/media/blobs/{digest}")
+async def read_media_blob(digest: str):
+    blob = media_service.find_blob(digest)
+    if not blob:
+        raise HTTPException(status_code=404, detail="Media blob not found")
+    return FileResponse(blob)
 
 
 class ImpressionWriteRequest(BaseModel):

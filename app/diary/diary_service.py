@@ -35,3 +35,6 @@ class DiaryService:
 
     def list_entries(self) -> list[DiaryEntry]:
         return self.store.list_entries()
+
+    def archive_tree(self) -> list[dict]:
+        return self.store.archive_tree()

@@ -21,6 +21,7 @@ class MarkdownDiaryStore:
             "mood": entry.mood,
             "tags": entry.tags,
             "people": entry.people,
+            "media_refs": entry.media_refs,
             "importance": entry.importance,
             "source": entry.source,
             "revision": entry.revision,
@@ -51,6 +52,7 @@ class MarkdownDiaryStore:
             mood=meta.get("mood", []),
             tags=meta.get("tags", []),
             people=meta.get("people", []),
+            media_refs=meta.get("media_refs", []),
             importance=meta.get("importance", 3),
             source=meta.get("source", "bot"),
             revision=meta.get("revision", 1),
@@ -65,3 +67,41 @@ class MarkdownDiaryStore:
             except Exception:
                 continue
         return entries
+
+    def archive_tree(self) -> list[dict]:
+        years: list[dict] = []
+        if not self.paths.diary_dir.exists():
+            return years
+        for year_dir in sorted(self.paths.diary_dir.iterdir(), reverse=True):
+            if not year_dir.is_dir():
+                continue
+            months = []
+            for month_dir in sorted(year_dir.iterdir(), reverse=True):
+                if not month_dir.is_dir():
+                    continue
+                days = []
+                for path in sorted(month_dir.glob("*.md"), reverse=True):
+                    try:
+                        entry = self.read(path.stem)
+                    except Exception:
+                        continue
+                    days.append(
+                        {
+                            "date": entry.date,
+                            "title": entry.normalized_title(),
+                            "importance": entry.importance,
+                            "tags": entry.tags,
+                            "people": entry.people,
+                        }
+                    )
+                if days:
+                    months.append({"month": month_dir.name, "days": days, "count": len(days)})
+            if months:
+                years.append(
+                    {
+                        "year": year_dir.name,
+                        "months": months,
+                        "count": sum(month["count"] for month in months),
+                    }
+                )
+        return years

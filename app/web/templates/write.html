@@ -54,11 +54,19 @@
             正文
             <textarea name="body" required placeholder="写发生了什么、为什么重要、主观评价、情绪和未来线索。">{{ selected_entry.body if selected_entry else '' }}</textarea>
           </label>
+          {% if ui_settings.allow_media_refs %}
+          <label>
+            图片 / 媒体引用
+            <textarea class="short-textarea" name="media_refs" placeholder="每行一个图片或媒体 URL，例如 /media/blobs/sha256 或 https://...">{{ selected_entry.media_refs | join('\n') if selected_entry else '' }}</textarea>
+          </label>
+          {% endif %}
+          {% if ui_settings.show_impression_prompt %}
           <aside class="prompt-card">
             <strong>人物印象提示</strong>
-            <p>写完日记后，检查这篇内容是否改变了对某个人的理解。如果有新证据，就去“印象”页更新：性格、兴趣、偏好、关系线索、可靠证据日期。没有新变化就不用硬写。</p>
+            <p>{{ ui_settings.impression_prompt }}</p>
             <a class="text-link" href="/impressions">打开印象页</a>
           </aside>
+          {% endif %}
           <div class="form-actions">
             <button type="submit">保存日记</button>
             <span class="muted">同日期覆盖写入前会自动生成 revision。</span>

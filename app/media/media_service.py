@@ -27,6 +27,7 @@ class MediaService:
         record = {
             "sha256": digest,
             "path": str(blob_path),
+            "url": f"/media/blobs/{digest}",
             "original_name": original_name or source.name,
         }
         if not any(item["sha256"] == digest for item in manifest["assets"]):
@@ -65,3 +66,13 @@ class MediaService:
             except Exception:
                 continue
         return manifests
+
+    def list_by_date(self, date: str) -> dict:
+        return self._read_manifest(self._manifest_path(date), date)
+
+    def find_blob(self, digest: str) -> Path | None:
+        root = self.paths.root / "media" / "blobs" / "sha256" / digest[:2] / digest[2:4]
+        if not root.exists():
+            return None
+        matches = list(root.glob(f"{digest}.*"))
+        return matches[0] if matches else None

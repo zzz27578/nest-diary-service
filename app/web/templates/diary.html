@@ -45,6 +45,22 @@
             {% for person in selected_entry.people %}<a href="/impressions?name={{ person | urlencode }}">{{ person }}</a>{% endfor %}
           </div>
           <pre>{{ selected_entry.body }}</pre>
+          {% if selected_entry.media_refs %}
+          <section class="media-strip">
+            <h3>媒体引用</h3>
+            <div class="media-grid">
+              {% for ref in selected_entry.media_refs %}
+              <a href="{{ ref }}" target="_blank" rel="noreferrer">
+                {% if ref.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.gif')) or ref.startswith('/media/blobs/') %}
+                <img src="{{ ref }}" alt="日记媒体">
+                {% else %}
+                <span>{{ ref }}</span>
+                {% endif %}
+              </a>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
           <div class="form-actions">
             <a class="primary-action" href="/write?date={{ selected_entry.date }}">编辑这篇</a>
           </div>

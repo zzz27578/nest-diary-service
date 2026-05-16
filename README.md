@@ -12,17 +12,21 @@
 - 日记写入：`/api/v1/diary/write`
 - 日记读取：`/api/v1/diary/{date}`
 - 日记搜索：`/api/v1/diary/search`
+- 日记归档：`/api/v1/diary/archive`
 - 媒体归档：`/api/v1/media/attach`
+- 按日期读取媒体：`/api/v1/media/by-date/{date}`
+- 媒体 blob 访问：`/media/blobs/{sha256}`
 - 人物印象列表：`/api/v1/impressions`
 - 人物印象读取：`/api/v1/impressions/{name}`
 - 人物印象写入：`/api/v1/impressions/write`
 - Markdown 日记落盘
+- 日记按 `diary/YYYY/MM/YYYY-MM-DD.md` 归档
 - JSON 人物印象落盘
 - SQLite FTS5 + 中文 LIKE fallback 搜索
 - 覆盖写入前 revision 快照
 - SHA256 内容寻址媒体仓库
 - 密码保护网页后台
-- 后台真实路由：`/`、`/write`、`/search`、`/diary`、`/impressions`、`/media`、`/revisions`
+- 后台真实路由：`/`、`/write`、`/search`、`/diary`、`/impressions`、`/media`、`/revisions`、`/settings`
 - 普通 Docker Compose 部署
 - 可选 1Panel 本地应用包
 
@@ -159,6 +163,31 @@ data/memory/people/
 ```
 
 推荐让 bot 在写完日记后自行判断是否需要更新人物印象。只有当日记里出现稳定证据时才更新，例如性格特征、兴趣爱好、偏好、关系变化、长期需求或重要边界。没有新证据时不需要硬写。
+
+## 数据存储结构
+
+默认数据目录是容器内 `/app/data`，也可以通过 `NEST_DATA_DIR` 改到别处。核心结构如下：
+
+```text
+data/
+  diary/YYYY/MM/YYYY-MM-DD.md          # 每日 Markdown 日记，带 frontmatter
+  memory/people/*.json                # 人物印象 JSON
+  media/blobs/sha256/aa/bb/<hash>.*   # 内容寻址媒体原件
+  media/by-date/YYYY/MM/YYYY-MM-DD/manifest.json
+  revisions/diary/YYYY/MM/YYYY-MM-DD/*.md
+  index/nest.sqlite                   # 搜索索引，可重建
+  settings/service-ui.json            # 本体网页设置
+```
+
+不丢数据的关键：
+
+- 把整个 `data/` 目录映射到 Docker volume 或宿主机目录。
+- 日记和人物印象是普通文本文件，方便备份和人工检查。
+- 同日期覆盖写入前会写入 `revisions/` 快照。
+- 媒体用 SHA256 内容寻址，同一文件不会重复存。
+- SQLite 只是检索索引，坏了可以从 Markdown 日记重建，不是唯一数据源。
+
+日记支持 `media_refs` 字段，可保存图片或附件 URL。先通过 `attach_media` 归档文件，再把返回的 `/media/blobs/{sha256}` 写入日记，就能在网页日记页显示或跳转。
 
 ## 使用手册
 

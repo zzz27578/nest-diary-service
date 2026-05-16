@@ -22,6 +22,16 @@
           <input name="q" value="{{ q }}" placeholder="关键词、人物、事情、情绪">
           <button type="submit">搜索</button>
         </form>
+        {% if archive %}
+        <div class="archive-inline">
+          {% for year in archive %}
+          <a href="/search?q={{ year.year }}">{{ year.year }} · {{ year.count }}</a>
+          {% for month in year.months %}
+          <a href="/search?q={{ year.year }}-{{ month.month }}">{{ year.year }}-{{ month.month }} · {{ month.count }}</a>
+          {% endfor %}
+          {% endfor %}
+        </div>
+        {% endif %}
         {% if q %}
         {% if results %}
         <div class="list">

@@ -19,6 +19,10 @@ class NestPaths:
     def index_dir(self) -> Path:
         return self.root / "index"
 
+    @property
+    def settings_dir(self) -> Path:
+        return self.root / "settings"
+
     def diary_file(self, date: str) -> Path:
         year, month, _day = date.split("-")
         return self.diary_dir / year / month / f"{date}.md"
@@ -38,6 +42,7 @@ class NestPaths:
             self.root / "revisions",
             self.root / "imports",
             self.root / "logs",
+            self.settings_dir,
             self.index_dir,
         ]:
             path.mkdir(parents=True, exist_ok=True)
