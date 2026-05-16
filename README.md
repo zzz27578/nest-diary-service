@@ -46,6 +46,30 @@ docker compose up -d
 
 默认端口是 `28080`。日记、媒体、索引和修订记录会保存在当前目录的 `data/` 中。
 
+## 本地网页精修
+
+如果电脑上没有 Docker，可以直接用 Python 跑同一套后端和模板。这样本地修改 `app/web/templates/`、`app/web/static/` 后刷新浏览器就能看到，和服务器运行的页面来源一致。
+
+PowerShell 示例：
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -e .
+$env:NEST_DATA_DIR = "data-dev"
+$env:NEST_ADMIN_PASSWORD = "dev-password"
+$env:NEST_BOT_API_TOKEN = "dev-token-change-me"
+uvicorn app.main:app --reload --host 127.0.0.1 --port 28080
+```
+
+打开：
+
+```text
+http://127.0.0.1:28080
+```
+
+登录密码是上面设置的 `dev-password`。开发数据会落在 `data-dev/`，不会污染正式 `data/`。
+
 检查服务：
 
 ```bash

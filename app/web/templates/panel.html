@@ -19,13 +19,74 @@
       </form>
     </header>
 
+    {% if saved %}
+    <div class="notice success">日记已保存，修订历史会在覆盖写入前自动保留。</div>
+    {% endif %}
+    {% if error %}
+    <div class="notice error">{{ error }}</div>
+    {% endif %}
+
+    <section id="editor" class="section">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Write / Revise</p>
+          <h2>写入日记</h2>
+        </div>
+        {% if selected_entry %}
+        <a class="text-link" href="/panel#editor">新建空白</a>
+        {% endif %}
+      </div>
+      <form class="editor-form" method="post" action="/panel/diary">
+        <div class="form-grid">
+          <label>
+            日期
+            <input name="date" required placeholder="2026-05-13" value="{{ selected_entry.date if selected_entry else '' }}">
+          </label>
+          <label>
+            标题
+            <input name="title" placeholder="默认使用日期" value="{{ selected_entry.normalized_title() if selected_entry else '' }}">
+          </label>
+          <label>
+            情绪
+            <input name="mood" placeholder="focused,relieved" value="{{ selected_entry.mood | join(',') if selected_entry else '' }}">
+          </label>
+          <label>
+            标签
+            <input name="tags" placeholder="diary,memory" value="{{ selected_entry.tags | join(',') if selected_entry else '' }}">
+          </label>
+          <label>
+            人物
+            <input name="people" placeholder="admin,assistant" value="{{ selected_entry.people | join(',') if selected_entry else '' }}">
+          </label>
+          <label>
+            重要度
+            <input name="importance" type="number" min="1" max="5" value="{{ selected_entry.importance if selected_entry else 3 }}">
+          </label>
+        </div>
+        <label>
+          正文
+          <textarea name="body" required placeholder="写发生了什么、为什么重要、主观评价、情绪和未来线索。">{{ selected_entry.body if selected_entry else '' }}</textarea>
+        </label>
+        <div class="form-actions">
+          <button type="submit">保存日记</button>
+          <span class="muted">同日期覆盖写入前会自动生成 revision。</span>
+        </div>
+      </form>
+    </section>
+
     <section id="search" class="section">
-      <h2>搜索</h2>
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Recall</p>
+          <h2>搜索</h2>
+        </div>
+      </div>
       <form class="searchbar" method="get" action="/panel#search">
         <input name="q" value="{{ q }}" placeholder="关键词、人物、事情">
         <button type="submit">搜索</button>
       </form>
       {% if q %}
+      {% if results %}
       <div class="list">
         {% for result in results %}
         <a class="row" href="/panel?date={{ result.date }}&q={{ q }}#diary">
@@ -35,12 +96,20 @@
         </a>
         {% endfor %}
       </div>
+      {% else %}
+      <p class="muted">没有搜到相关日记，可以换一个关键词。</p>
+      {% endif %}
       {% endif %}
     </section>
 
     <section id="diary" class="section split">
       <div>
-        <h2>日记</h2>
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Entries</p>
+            <h2>日记</h2>
+          </div>
+        </div>
         {% if entries %}
         <div class="list compact">
           {% for entry in entries %}
@@ -71,7 +140,12 @@
     </section>
 
     <section id="media" class="section">
-      <h2>媒体</h2>
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Evidence</p>
+          <h2>媒体</h2>
+        </div>
+      </div>
       {% if manifests %}
       {% for manifest in manifests %}
       <div class="subsection">
@@ -93,7 +167,12 @@
     </section>
 
     <section id="revisions" class="section">
-      <h2>修订</h2>
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">History</p>
+          <h2>修订</h2>
+        </div>
+      </div>
       {% if revisions %}
       <div class="list">
         {% for item in revisions %}
