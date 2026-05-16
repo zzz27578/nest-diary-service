@@ -2,6 +2,8 @@
 
 仓库地址：<https://github.com/zzz27578/nest-diary-service>
 
+当前版本：`0.2.1`
+
 这是小窝日记系统的本体服务。它独立于 AstrBot 运行，负责网站、API、日记存储、媒体存储、搜索索引、版本追溯、旧日记迁移和归档。
 
 对应 AstrBot 连接插件：<https://github.com/zzz27578/astrbot-plugin-nest-diary-connector>
