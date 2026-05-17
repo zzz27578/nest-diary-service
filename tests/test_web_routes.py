@@ -71,7 +71,7 @@ def test_web_import_rebuilds_diary_index(tmp_path):
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:
         archive.writestr(
-            "diary/2026/05/2026-05-17.md",
+            "modules/diary/entries/2026/05/2026-05-17.md",
             '---\ndate: "2026-05-17"\ntitle: "导入标题"\nmood: []\ntags: ["import"]\npeople: []\nmedia_refs: []\nimportance: 3\nsource: "bot"\nrevision: 1\n---\n\n# 导入标题\n\n导入正文\n',
         )
 

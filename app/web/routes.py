@@ -81,6 +81,19 @@ def create_web_router(
         redirect = require_login(request)
         if redirect:
             return redirect
+        ui_settings = settings_store.load() if settings_store else ServiceUiSettings()
+        if not ui_settings.enable_diary_module:
+            return templates.TemplateResponse(
+                request,
+                "write.html",
+                {
+                    "selected_entry": None,
+                    "saved": "",
+                    "error": "日记模块当前已关闭。",
+                    "active": "write",
+                    "ui_settings": ui_settings,
+                },
+            )
         selected_entry = None
         if date and diary_service:
             try:
@@ -95,7 +108,7 @@ def create_web_router(
                 "saved": saved,
                 "error": error,
                 "active": "write",
-                "ui_settings": settings_store.load() if settings_store else ServiceUiSettings(),
+                "ui_settings": ui_settings,
             },
         )
 
@@ -105,7 +118,11 @@ def create_web_router(
         if redirect:
             return redirect
         ui_settings = settings_store.load() if settings_store else ServiceUiSettings()
-        results = diary_service.search(q, top_k=ui_settings.search_default_top_k) if q and diary_service else []
+        results = (
+            diary_service.search(q, top_k=ui_settings.search_default_top_k)
+            if q and diary_service and ui_settings.enable_diary_module
+            else []
+        )
         return templates.TemplateResponse(
             request,
             "search.html",
@@ -117,6 +134,20 @@ def create_web_router(
         redirect = require_login(request)
         if redirect:
             return redirect
+        ui_settings = settings_store.load() if settings_store else ServiceUiSettings()
+        if not ui_settings.enable_diary_module:
+            return templates.TemplateResponse(
+                request,
+                "diary.html",
+                {
+                    "entries": [],
+                    "selected_entry": None,
+                    "saved": saved,
+                    "error": error or "日记模块当前已关闭。",
+                    "active": "diary",
+                    "archive": [],
+                },
+            )
         entries = diary_service.list_entries() if diary_service else []
         selected_entry = None
         if date and diary_service:
@@ -212,6 +243,9 @@ def create_web_router(
         redirect = require_login(request)
         if redirect:
             return redirect
+        ui_settings = settings_store.load() if settings_store else ServiceUiSettings()
+        if not ui_settings.enable_diary_module:
+            return RedirectResponse("/write?error=diary-module-disabled", status_code=303)
         if not diary_service:
             return RedirectResponse("/write?error=diary-service-unavailable", status_code=303)
         entry = DiaryEntry(
@@ -280,9 +314,13 @@ def create_web_router(
     async def save_settings(
         request: Request,
         search_default_top_k: int = Form(20),
+        enable_diary_module: str = Form(""),
         diary_archive_granularity: str = Form("day"),
         allow_media_refs: str = Form(""),
         show_impression_prompt: str = Form(""),
+        active_frontend_style: str = Form("default"),
+        custom_webui_dir: str = Form(""),
+        backup_custom_before_update: str = Form(""),
         impression_prompt: str = Form(""),
     ):
         redirect = require_login(request)
@@ -292,10 +330,14 @@ def create_web_router(
             return RedirectResponse("/settings?error=settings-store-unavailable", status_code=303)
         settings_store.save(
             ServiceUiSettings(
+                enable_diary_module=enable_diary_module == "on",
                 search_default_top_k=search_default_top_k,
                 diary_archive_granularity=diary_archive_granularity,
                 allow_media_refs=allow_media_refs == "on",
                 show_impression_prompt=show_impression_prompt == "on",
+                active_frontend_style=active_frontend_style.strip() or "default",
+                custom_webui_dir=custom_webui_dir.strip(),
+                backup_custom_before_update=backup_custom_before_update == "on",
                 impression_prompt=impression_prompt.strip(),
             )
         )
@@ -307,6 +349,7 @@ def create_web_router(
         admin_password: str = Form(""),
         bot_api_token: str = Form(""),
         generate_bot_api_token: str = Form(""),
+        external_api_enabled: str = Form(""),
     ):
         redirect = require_login(request)
         if redirect:
@@ -314,7 +357,11 @@ def create_web_router(
         if not security_store:
             return RedirectResponse("/settings?error=security-store-unavailable", status_code=303)
         token = security_store.generate_token() if generate_bot_api_token == "on" else bot_api_token.strip()
-        saved_security = security_store.update(admin_password=admin_password.strip() or None, bot_api_token=token)
+        saved_security = security_store.update(
+            admin_password=admin_password.strip() or None,
+            bot_api_token=token,
+            external_api_enabled=external_api_enabled == "on",
+        )
         if web_auth:
             web_auth.admin_password = saved_security.admin_password
             web_auth.session_secret = saved_security.bot_api_token or "development-session-secret"

@@ -36,10 +36,14 @@ class PersonImpression:
 
 @dataclass
 class ServiceUiSettings:
+    enable_diary_module: bool = True
     search_default_top_k: int = 20
     diary_archive_granularity: str = "day"
     allow_media_refs: bool = True
     show_impression_prompt: bool = True
+    active_frontend_style: str = "default"
+    custom_webui_dir: str = ""
+    backup_custom_before_update: bool = True
     impression_prompt: str = (
         "写完日记后，请依据你的角色设定和当天日记内容判断："
         "这篇日记是否提供了关于某个人的稳定新证据。"
@@ -51,3 +55,4 @@ class ServiceUiSettings:
 class SecuritySettings:
     admin_password: str = "12345678"
     bot_api_token: str = ""
+    external_api_enabled: bool = False

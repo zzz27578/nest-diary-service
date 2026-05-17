@@ -23,9 +23,12 @@ class ServiceSettingsStore:
         return ServiceUiSettings(**defaults)
 
     def save(self, settings: ServiceUiSettings) -> ServiceUiSettings:
+        settings.enable_diary_module = bool(settings.enable_diary_module)
         settings.search_default_top_k = max(1, min(int(settings.search_default_top_k), 50))
         if settings.diary_archive_granularity not in {"day", "month", "year"}:
             settings.diary_archive_granularity = "day"
+        settings.active_frontend_style = settings.active_frontend_style.strip() or "default"
+        settings.custom_webui_dir = settings.custom_webui_dir.strip()
         self.path.write_text(
             json.dumps(asdict(settings), ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -45,6 +48,7 @@ class SecuritySettingsStore:
         defaults = {
             "admin_password": self.default_admin_password,
             "bot_api_token": self.default_bot_api_token,
+            "external_api_enabled": bool(self.default_bot_api_token),
         }
         if self.path.exists():
             data = json.loads(self.path.read_text(encoding="utf-8"))
@@ -59,12 +63,19 @@ class SecuritySettingsStore:
         )
         return settings
 
-    def update(self, admin_password: str | None = None, bot_api_token: str | None = None) -> SecuritySettings:
+    def update(
+        self,
+        admin_password: str | None = None,
+        bot_api_token: str | None = None,
+        external_api_enabled: bool | None = None,
+    ) -> SecuritySettings:
         current = self.load()
         if admin_password:
             current.admin_password = admin_password
         if bot_api_token is not None:
             current.bot_api_token = bot_api_token
+        if external_api_enabled is not None:
+            current.external_api_enabled = external_api_enabled
         return self.save(current)
 
     def generate_token(self) -> str:

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 - 2026-05-17
+
+- Introduced modular data layout under `modules/`, `system/`, and `user_custom/`.
+- Added diary module enable switch to WebUI settings and API guards.
+- Changed Bot API Token wording to optional external API Key and added an external API enable switch.
+- Updated backup import/export to prefer modular roots while accepting legacy backup roots.
+- Added custom WebUI settings for active style, custom directory, and update-time backup policy.
+
 ## 0.3.0 - 2026-05-17
 
 - Added diary edit and delete flow in the web panel.

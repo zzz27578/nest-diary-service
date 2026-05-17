@@ -14,4 +14,11 @@ def verify_bearer_token(expected_token: str, authorization: str | None = Header(
 
 
 def verify_bearer_token_from_store(token_getter, authorization: str | None = Header(default=None)) -> None:
-    verify_bearer_token(token_getter(), authorization)
+    loaded = token_getter()
+    if isinstance(loaded, tuple):
+        expected_token, enabled = loaded
+        if not enabled:
+            raise HTTPException(status_code=403, detail="External API is disabled")
+        verify_bearer_token(expected_token, authorization)
+        return
+    verify_bearer_token(loaded, authorization)

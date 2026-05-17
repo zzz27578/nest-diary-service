@@ -19,7 +19,7 @@ from .version_service import VersionService
 from .web.routes import create_web_router, mount_static
 from .web_auth import WebSessionAuth
 
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.4.0"
 settings = load_settings()
 app = FastAPI(title="Nest Diary Service", version=APP_VERSION)
 paths = NestPaths(settings.data_dir)
@@ -77,7 +77,15 @@ class DiaryWriteRequest(BaseModel):
 
 
 def require_bot_token(authorization: str | None = Header(default=None)) -> None:
-    verify_bearer_token_from_store(lambda: security_settings.load().bot_api_token, authorization)
+    verify_bearer_token_from_store(
+        lambda: ((loaded := security_settings.load()).bot_api_token, loaded.external_api_enabled),
+        authorization,
+    )
+
+
+def require_diary_module_enabled() -> None:
+    if not service_settings.load().enable_diary_module:
+        raise HTTPException(status_code=403, detail="Diary module is disabled")
 
 
 @app.get("/api/v1/status")
@@ -91,7 +99,11 @@ async def status(_auth: None = Depends(require_bot_token)):
 
 
 @app.post("/api/v1/diary/write")
-async def write_diary(payload: DiaryWriteRequest, _auth: None = Depends(require_bot_token)):
+async def write_diary(
+    payload: DiaryWriteRequest,
+    _auth: None = Depends(require_bot_token),
+    _module: None = Depends(require_diary_module_enabled),
+):
     entry = DiaryEntry(
         date=payload.date,
         title=payload.title,
@@ -108,17 +120,29 @@ async def write_diary(payload: DiaryWriteRequest, _auth: None = Depends(require_
 
 
 @app.get("/api/v1/diary/search")
-async def search_diary(q: str, top_k: int = 8, _auth: None = Depends(require_bot_token)):
+async def search_diary(
+    q: str,
+    top_k: int = 8,
+    _auth: None = Depends(require_bot_token),
+    _module: None = Depends(require_diary_module_enabled),
+):
     return {"query": q, "results": diary_service.search(q, top_k=top_k)}
 
 
 @app.get("/api/v1/diary/archive")
-async def diary_archive(_auth: None = Depends(require_bot_token)):
+async def diary_archive(
+    _auth: None = Depends(require_bot_token),
+    _module: None = Depends(require_diary_module_enabled),
+):
     return {"items": diary_service.archive_tree()}
 
 
 @app.get("/api/v1/diary/{date}")
-async def read_diary(date: str, _auth: None = Depends(require_bot_token)):
+async def read_diary(
+    date: str,
+    _auth: None = Depends(require_bot_token),
+    _module: None = Depends(require_diary_module_enabled),
+):
     try:
         entry = diary_service.read_by_date(date)
     except FileNotFoundError:
@@ -144,7 +168,11 @@ class MediaAttachRequest(BaseModel):
 
 
 @app.post("/api/v1/media/attach")
-async def attach_media(payload: MediaAttachRequest, _auth: None = Depends(require_bot_token)):
+async def attach_media(
+    payload: MediaAttachRequest,
+    _auth: None = Depends(require_bot_token),
+    _module: None = Depends(require_diary_module_enabled),
+):
     source = Path(payload.source_path)
     if not source.exists():
         raise HTTPException(status_code=404, detail="Media source file not found")
@@ -153,7 +181,11 @@ async def attach_media(payload: MediaAttachRequest, _auth: None = Depends(requir
 
 
 @app.get("/api/v1/media/by-date/{date}")
-async def list_media_by_date(date: str, _auth: None = Depends(require_bot_token)):
+async def list_media_by_date(
+    date: str,
+    _auth: None = Depends(require_bot_token),
+    _module: None = Depends(require_diary_module_enabled),
+):
     return media_service.list_by_date(date)
 
 

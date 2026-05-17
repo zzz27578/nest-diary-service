@@ -8,19 +8,19 @@ additionalProperties:
       required: true
       rule: paramPort
       type: number
-    - default: change-me
+    - default: "12345678"
       edit: true
       envKey: NEST_ADMIN_PASSWORD
       labelEn: Admin Password
       labelZh: 管理员密码
       required: true
       type: password
-    - default: change-me-to-a-long-random-token
+    - default: ""
       edit: true
       envKey: NEST_BOT_API_TOKEN
-      labelEn: Bot API Token
-      labelZh: Bot API Token
-      required: true
+      labelEn: External API Key
+      labelZh: 外部 API Key
+      required: false
       type: password
     - default: Asia/Shanghai
       edit: true

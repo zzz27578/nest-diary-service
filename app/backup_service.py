@@ -8,7 +8,17 @@ from app.paths import NestPaths
 
 
 class BackupService:
-    allowed_roots = {"diary", "memory", "media", "settings", "imports"}
+    allowed_roots = {
+        "system",
+        "modules",
+        "user_custom",
+        "imports",
+        # Legacy standalone layout, accepted for old backups.
+        "diary",
+        "memory",
+        "media",
+        "settings",
+    }
 
     def __init__(self, paths: NestPaths):
         self.paths = paths
@@ -17,7 +27,7 @@ class BackupService:
     def export_zip(self) -> bytes:
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            for root_name in ["diary", "memory", "media", "settings"]:
+            for root_name in ["system", "modules", "user_custom", "imports"]:
                 root = self.paths.root / root_name
                 if not root.exists():
                     continue

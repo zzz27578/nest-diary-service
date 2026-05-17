@@ -14,7 +14,7 @@ class RevisionService:
 
     def snapshot(self, date: str, content: str, reason: str, source: str) -> Path:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        target_dir = self.paths.root / "revisions" / "diary" / date[:4] / date[5:7] / date
+        target_dir = self.paths.revisions_dir / date[:4] / date[5:7] / date
         target_dir.mkdir(parents=True, exist_ok=True)
         path = target_dir / f"{timestamp}.md"
         metadata = {
@@ -31,7 +31,7 @@ class RevisionService:
         return path
 
     def list_revisions(self) -> list[dict]:
-        root = self.paths.root / "revisions" / "diary"
+        root = self.paths.revisions_dir
         if not root.exists():
             return []
         revisions = []

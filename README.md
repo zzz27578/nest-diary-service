@@ -1,85 +1,75 @@
 # 小窝日记服务
 
+当前版本：`0.4.0`
+
 仓库地址：<https://github.com/zzz27578/nest-diary-service>
 
-当前版本：`0.3.0`
+这是小窝系统当前的 WebUI 与服务本体。它仍可独立部署，也会作为后续“插件内置 WebUI”的代码来源继续演进。
 
-这是小窝日记系统的本体服务。它独立于 AstrBot 运行，负责网站、API、日记存储、媒体存储、搜索索引、版本追溯、旧日记迁移和归档。
+## 本轮架构调整
 
-对应 AstrBot 连接插件：<https://github.com/zzz27578/astrbot-plugin-nest-diary-connector>
-
-## 当前已实现
-
-- Bot token API：`/api/v1/status`
-- 日记写入：`/api/v1/diary/write`
-- 日记读取：`/api/v1/diary/{date}`
-- 日记搜索：`/api/v1/diary/search`
-- 日记归档：`/api/v1/diary/archive`
-- 媒体归档：`/api/v1/media/attach`
-- 按日期读取媒体：`/api/v1/media/by-date/{date}`
-- 媒体 blob 访问：`/media/blobs/{sha256}`
-- 人物印象列表：`/api/v1/impressions`
-- 人物印象读取：`/api/v1/impressions/{name}`
-- 人物印象写入：`/api/v1/impressions/write`
-- Markdown 日记落盘
-- 日记按 `diary/YYYY/MM/YYYY-MM-DD.md` 归档
-- JSON 人物印象落盘
-- SQLite FTS5 + 中文 LIKE fallback 搜索
-- 覆盖写入前 revision 快照
-- SHA256 内容寻址媒体仓库
-- 密码保护网页后台
-- 后台真实路由：`/`、`/write`、`/search`、`/diary`、`/impressions`、`/media`、`/settings`
-- 普通 Docker Compose 部署
-- 可选 1Panel 本地应用包
-
-## 普通 Docker 部署
-
-复制环境变量文件：
-
-```bash
-cp .env.example .env
-```
-
-编辑 `.env`：
+这版开始把小窝整理成模块化数据结构：
 
 ```text
-NEST_PORT=28080
-NEST_ADMIN_PASSWORD=12345678
-NEST_BOT_API_TOKEN=
-NEST_ENABLE_SELF_UPDATE=false
-TZ=Asia/Shanghai
+data/
+  system/
+    settings/
+
+  modules/
+    diary/
+      entries/YYYY/MM/YYYY-MM-DD.md
+      index/nest.sqlite
+      snapshots/YYYY/MM/YYYY-MM-DD/*.md
+      drafts/
+
+    impressions/
+      people/*.json
+
+    media/
+      blobs/sha256/...
+      by-date/YYYY/MM/YYYY-MM-DD/manifest.json
+
+    archive/
+
+  user_custom/
+    webui/
+      themes/
+      modules/
+
+  imports/
+  logs/
 ```
 
-如果不填环境变量，网页初始管理员密码也是 `12345678`。第一次登录后请到 `/settings` 修改管理员密码，并生成或填写 `Bot API Token`。
+设计原则：
 
-启动：
+- 官方代码和默认 WebUI 可以更新。
+- 用户或 bot 自己改的前端放在 `user_custom/`，更新不覆盖。
+- WebUI 设置里保留“外部 API Key”，只给 MCP、脚本、第三方网页等外部扩展使用。
+- 插件内部调用小窝核心能力时不依赖 API Key。
+- 日记模块可以在小窝设置里关闭；关闭后 WebUI 和 API 都不会执行日记写入/检索。
 
-```bash
-docker compose up -d
-```
+## 已实现功能
 
-默认端口是 `28080`。日记、媒体、索引、设置和内部快照会保存在当前目录的 `data/` 中。
+- 密码登录 WebUI，初始密码 `12345678`。
+- 日记写入、编辑、删除。
+- 年 / 月 / 日归档选择，只显示已有日记日期。
+- 日记搜索，SQLite FTS5 + LIKE fallback。
+- 图片 / 附件归档，媒体按 SHA256 存储。
+- 人物印象管理。
+- 设置页管理外部 API Key、日记模块开关、前端样式和自定义目录。
+- ZIP 导入导出，优先备份 `system/`、`modules/`、`user_custom/`、`imports/`。
+- 导入兼容旧目录：`diary/`、`memory/`、`media/`、`settings/`。
+- 启动时会把旧目录缺失文件复制到新模块目录，不删除旧数据。
+- 版本检测与可选 git 自更新。
 
-## 本地网页精修
-
-本项目现在提供两种本地查看方式，按用途选择：
-
-- 只看设计、改布局、改颜色：直接双击打开仓库根目录的 `webui-prototype.html`。
-- 看真实登录、真实写入、真实搜索：用 Python 跑本地服务，然后打开 `http://127.0.0.1:28080`。
-
-`webui-prototype.html` 是静态预览页，不需要后端请求，所以双击就能看。它复用真实页面的 `app/web/static/app.css` 和图片资源，用来快速打磨界面。
-
-如果要确认“服务器上最终跑出来的真实页面”，就需要启动本地 Python 服务。这样本地修改 `app/web/templates/`、`app/web/static/` 后刷新浏览器就能看到，和服务器运行的页面来源一致。
-
-PowerShell 示例：
+## 本地运行
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e .
 $env:NEST_DATA_DIR = "data-dev"
-$env:NEST_ADMIN_PASSWORD = "dev-password"
-$env:NEST_BOT_API_TOKEN = "dev-token-change-me"
+$env:NEST_ADMIN_PASSWORD = "12345678"
 uvicorn app.main:app --reload --host 127.0.0.1 --port 28080
 ```
 
@@ -89,135 +79,86 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 28080
 http://127.0.0.1:28080
 ```
 
-登录密码是上面设置的 `dev-password`。开发数据会落在 `data-dev/`，不会污染正式 `data/`。
+## 外部 API
 
-检查服务：
+外部 API 默认建议关闭。需要给外部 MCP、脚本或第三方页面访问时：
+
+1. 登录 WebUI。
+2. 打开 `/settings`。
+3. 在“访问密钥”里生成或填写外部 API Key。
+4. 勾选“启用外部 API 访问”。
+
+调用示例：
 
 ```bash
-curl -H "Authorization: Bearer 你的token" http://127.0.0.1:28080/api/v1/status
+curl -H "Authorization: Bearer 你的外部APIKey" http://127.0.0.1:28080/api/v1/status
 ```
 
-## AstrBot 连接
+## 插件绑定
 
-在 AstrBot 连接插件中配置：
+当前仍兼容独立服务模式。AstrBot 插件需要填写：
 
 ```text
 service_url = http://nest-diary:28080
-bot_api_token = 与 NEST_BOT_API_TOKEN 相同
+bot_api_token = WebUI 设置页里的外部 API Key
 ```
 
-更直观的绑定方式：
+如果外部 API 没有启用，插件通过 HTTP 访问独立服务会被拒绝。后续合并为插件内置 WebUI 后，插件内部工具不需要 API Key。
 
-1. 先登录小窝网页后台，初始密码 `12345678`。
-2. 打开 `/settings`，修改管理员密码。
-3. 在“访问密钥”里生成或填写 `Bot API Token`。
-4. 把这串 token 复制到 AstrBot 插件配置的 `bot_api_token`。
-5. 插件里的 `service_url` 填小窝服务地址，例如 `http://nest-diary:28080`。
+## 自定义前端
 
-管理员密码只管网页登录；`Bot API Token` 只管 AstrBot 插件访问 API。两者不要混用。
+默认自定义目录：
 
-## 版本更新
+```text
+data/user_custom/webui/
+```
 
-设置页提供两个真实动作：
+建议结构：
 
-- `检测版本`：访问 GitHub 上的 `pyproject.toml`，比较当前版本和最新版本。
-- `更新版本`：默认禁用。只有设置 `NEST_ENABLE_SELF_UPDATE=true`，且服务运行目录本身是 git 仓库时，才会执行 `git pull --ff-only`。
+```text
+themes/my-theme/
+  theme.json
+  templates/
+  static/
 
-Docker / 1Panel 部署建议在面板里拉取新镜像并重建容器；网页里的更新按钮不会假装能控制宿主机 Docker。
+modules/my-panel/
+```
 
-如果两个容器不在同一个 Docker 网络，可以改成宿主机或反代地址。
+渲染策略应遵循：
 
-## 1Panel 本地应用支持
+```text
+用户主题或模块存在 -> 使用用户版本
+不存在 -> 回退官方默认 WebUI
+```
 
-1Panel 本地应用包位于：
+更新前建议备份：
+
+```text
+data/user_custom/
+```
+
+## Docker / 1Panel
+
+镜像：
+
+```text
+ghcr.io/zzz27578/nest-diary-service:0.4.0
+```
+
+1Panel 本地应用支持文件位于：
 
 ```text
 deploy/1panel/nest-diary/
 ```
 
-它使用镜像：
+1Panel 只是可选部署方式；不用 1Panel 时，直接使用根目录 `docker-compose.yml` 即可。
 
-```text
-ghcr.io/zzz27578/nest-diary-service:0.3.0
-```
+## 静态 WebUI 预览
 
-1Panel 只是可选部署方式；不使用 1Panel 时，直接使用本项目根目录的 `docker-compose.yml` 即可。
-
-## 图片规范
-
-服务内置资源：
-
-```text
-app/web/static/nest-avatar.png
-app/web/static/nest-og.png
-deploy/1panel/nest-diary/logo.png
-```
-
-其中 1Panel 图标是 1:1 的 `logo.png`，网页头像用于后台首页展示。
-
-## 本地 WebUI 原型
-
-为了方便直接改前端，仓库根目录提供了一个可直接打开的静态原型：
+仓库根目录提供：
 
 ```text
 webui-prototype.html
 ```
 
-打开方式：
-
-```text
-C:\Users\29505\Desktop\记忆插件\nest-diary-service\webui-prototype.html
-```
-
-它不需要启动服务，直接用浏览器打开就能看到小窝后台雏形。这个文件用于快速调整视觉和布局；真正运行时的服务端模板在：
-
-```text
-app/web/templates/
-app/web/static/
-```
-
-需要注意：静态原型只负责“看起来像真实页面”，不会真的登录、写日记或搜索。要测试真实功能，请使用“本地网页精修”里的 Python 服务方式。
-
-## 人物印象
-
-人物印象是日记之外的长期认识层，数据保存在：
-
-```text
-data/memory/people/
-```
-
-推荐让 bot 在写完日记后自行判断是否需要更新人物印象。只有当日记里出现稳定证据时才更新，例如性格特征、兴趣爱好、偏好、关系变化、长期需求或重要边界。没有新证据时不需要硬写。
-
-## 数据存储结构
-
-默认数据目录是容器内 `/app/data`，也可以通过 `NEST_DATA_DIR` 改到别处。核心结构如下：
-
-```text
-data/
-  diary/YYYY/MM/YYYY-MM-DD.md          # 每日 Markdown 日记，带 frontmatter
-  memory/people/*.json                # 人物印象 JSON
-  media/blobs/sha256/aa/bb/<hash>.*   # 内容寻址媒体原件
-  media/by-date/YYYY/MM/YYYY-MM-DD/manifest.json
-  revisions/diary/YYYY/MM/YYYY-MM-DD/*.md
-  index/nest.sqlite                   # 搜索索引，可重建
-  settings/service-ui.json            # 本体网页设置
-  settings/security.json              # 管理员密码和 Bot API Token
-```
-
-不丢数据的关键：
-
-- 把整个 `data/` 目录映射到 Docker volume 或宿主机目录。
-- 日记和人物印象是普通文本文件，方便备份和人工检查。
-- 同日期覆盖写入前会写入 `revisions/` 快照。
-- 媒体用 SHA256 内容寻址，同一文件不会重复存。
-- SQLite 只是检索索引，坏了可以从 Markdown 日记重建，不是唯一数据源。
-
-日记支持 `media_refs` 字段，可保存图片或附件 URL。先通过 `attach_media` 归档文件，再把返回的 `/media/blobs/{sha256}` 写入日记，就能在网页日记页显示或跳转。
-
-## 使用手册
-
-见：
-
-```text
-docs/使用手册.md
-```
+它可以直接打开，用来快速看设计效果。真实登录、写入、搜索、导入导出仍需启动服务。

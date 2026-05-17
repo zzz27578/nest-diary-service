@@ -18,7 +18,7 @@ class ImpressionService:
 
     @property
     def people_dir(self) -> Path:
-        return self.paths.root / "memory" / "people"
+        return self.paths.memory_dir / "people"
 
     def save(self, impression: PersonImpression) -> PersonImpression:
         current = self.get(impression.name)

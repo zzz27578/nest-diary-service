@@ -44,11 +44,11 @@ class MediaService:
         return hasher.hexdigest()
 
     def _blob_path(self, digest: str, suffix: str) -> Path:
-        return self.paths.root / "media" / "blobs" / "sha256" / digest[:2] / digest[2:4] / f"{digest}{suffix}"
+        return self.paths.media_dir / "blobs" / "sha256" / digest[:2] / digest[2:4] / f"{digest}{suffix}"
 
     def _manifest_path(self, date: str) -> Path:
         year, month, _day = date.split("-")
-        return self.paths.root / "media" / "by-date" / year / month / date / "manifest.json"
+        return self.paths.media_dir / "by-date" / year / month / date / "manifest.json"
 
     def _read_manifest(self, path: Path, date: str) -> dict:
         if not path.exists():
@@ -56,7 +56,7 @@ class MediaService:
         return json.loads(path.read_text(encoding="utf-8"))
 
     def list_manifests(self) -> list[dict]:
-        root = self.paths.root / "media" / "by-date"
+        root = self.paths.media_dir / "by-date"
         if not root.exists():
             return []
         manifests = []
@@ -71,7 +71,7 @@ class MediaService:
         return self._read_manifest(self._manifest_path(date), date)
 
     def find_blob(self, digest: str) -> Path | None:
-        root = self.paths.root / "media" / "blobs" / "sha256" / digest[:2] / digest[2:4]
+        root = self.paths.media_dir / "blobs" / "sha256" / digest[:2] / digest[2:4]
         if not root.exists():
             return None
         matches = list(root.glob(f"{digest}.*"))
