@@ -2,7 +2,7 @@
 
 仓库地址：<https://github.com/zzz27578/nest-diary-service>
 
-当前版本：`0.2.1`
+当前版本：`0.3.0`
 
 这是小窝日记系统的本体服务。它独立于 AstrBot 运行，负责网站、API、日记存储、媒体存储、搜索索引、版本追溯、旧日记迁移和归档。
 
@@ -28,7 +28,7 @@
 - 覆盖写入前 revision 快照
 - SHA256 内容寻址媒体仓库
 - 密码保护网页后台
-- 后台真实路由：`/`、`/write`、`/search`、`/diary`、`/impressions`、`/media`、`/revisions`、`/settings`
+- 后台真实路由：`/`、`/write`、`/search`、`/diary`、`/impressions`、`/media`、`/settings`
 - 普通 Docker Compose 部署
 - 可选 1Panel 本地应用包
 
@@ -58,7 +58,7 @@ TZ=Asia/Shanghai
 docker compose up -d
 ```
 
-默认端口是 `28080`。日记、媒体、索引和修订记录会保存在当前目录的 `data/` 中。
+默认端口是 `28080`。日记、媒体、索引、设置和内部快照会保存在当前目录的 `data/` 中。
 
 ## 本地网页精修
 
@@ -138,7 +138,7 @@ deploy/1panel/nest-diary/
 它使用镜像：
 
 ```text
-ghcr.io/zzz27578/nest-diary-service:0.2.1
+ghcr.io/zzz27578/nest-diary-service:0.3.0
 ```
 
 1Panel 只是可选部署方式；不使用 1Panel 时，直接使用本项目根目录的 `docker-compose.yml` 即可。

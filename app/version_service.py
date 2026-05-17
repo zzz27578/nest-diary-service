@@ -50,7 +50,7 @@ class VersionService:
         if not self.enable_self_update:
             return VersionUpdateResult(
                 ok=False,
-                message="当前未启用自更新。Docker/1Panel 部署请在面板里拉取新镜像并重建容器；如需 git 自更新，设置 NEST_ENABLE_SELF_UPDATE=true。",
+                message="当前未启用自更新。Docker/1Panel 部署请在面板里拉取新镜像并重建容器；如需 git 自更新，请设置 NEST_ENABLE_SELF_UPDATE=true。",
             )
         if not (self.repo_root / ".git").exists():
             return VersionUpdateResult(

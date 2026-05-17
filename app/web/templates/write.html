@@ -13,7 +13,7 @@
     <section class="workspace">
       <header class="page-head">
         <div>
-          <p class="eyebrow">Write / Revise</p>
+          <p class="eyebrow">Write / Edit</p>
           <h1>写入日记</h1>
         </div>
         {% if selected_entry %}
@@ -31,7 +31,7 @@
             </label>
             <label>
               标题
-              <input name="title" placeholder="默认使用日期" value="{{ selected_entry.normalized_title() if selected_entry else '' }}">
+              <input name="title" placeholder="用一句话概括这篇日记" value="{{ selected_entry.normalized_title() if selected_entry else '' }}">
             </label>
             <label>
               情绪
@@ -69,7 +69,7 @@
           {% endif %}
           <div class="form-actions">
             <button type="submit">保存日记</button>
-            <span class="muted">同日期覆盖写入前会自动生成 revision。</span>
+            <span class="muted">同日期覆盖写入前会自动保留内部快照。</span>
           </div>
         </form>
       </section>

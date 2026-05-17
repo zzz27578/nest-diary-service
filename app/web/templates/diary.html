@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-  {% from "_shell.html" import nav %}
+  {% from "_shell.html" import nav, alerts %}
   <main class="app-shell">
     {{ nav(active) }}
     <section class="workspace">
@@ -18,10 +18,26 @@
         </div>
         <a class="primary-action" href="/write">写一篇</a>
       </header>
-      {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+      {{ alerts(saved, error) }}
 
-      <section class="section split">
-        <div>
+      <section class="section">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Jump</p>
+            <h2>按日期查看</h2>
+          </div>
+          <span class="muted">只显示已有日记的年月日。</span>
+        </div>
+        <form class="date-jump" method="get" action="/diary">
+          <select id="yearSelect" aria-label="年份"></select>
+          <select id="monthSelect" aria-label="月份"></select>
+          <select id="daySelect" aria-label="日期" name="date"></select>
+          <button type="submit">打开</button>
+        </form>
+      </section>
+
+      <section class="section diary-layout">
+        <aside class="diary-list">
           {% if entries %}
           <div class="list compact">
             {% for entry in entries %}
@@ -34,7 +50,8 @@
           {% else %}
           <p class="muted">还没有日记。</p>
           {% endif %}
-        </div>
+        </aside>
+
         <article class="entry">
           {% if selected_entry %}
           <p class="eyebrow">{{ selected_entry.date }}</p>
@@ -63,6 +80,10 @@
           {% endif %}
           <div class="form-actions">
             <a class="primary-action" href="/write?date={{ selected_entry.date }}">编辑这篇</a>
+            <form method="post" action="/diary/delete" onsubmit="return confirm('确定删除这篇日记吗？删除前会保留内部快照。');">
+              <input type="hidden" name="date" value="{{ selected_entry.date }}">
+              <button class="danger-action" type="submit">删除日记</button>
+            </form>
           </div>
           {% else %}
           <p class="muted">从左侧选择一篇日记。</p>
@@ -71,5 +92,63 @@
       </section>
     </section>
   </main>
+  <script>
+    const archive = {{ archive | tojson }};
+    const selectedDate = "{{ selected_entry.date if selected_entry else '' }}";
+    const yearSelect = document.getElementById("yearSelect");
+    const monthSelect = document.getElementById("monthSelect");
+    const daySelect = document.getElementById("daySelect");
+
+    function fillSelect(select, items, labeler, valueGetter) {
+      select.innerHTML = "";
+      items.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = valueGetter(item);
+        option.textContent = labeler(item);
+        select.appendChild(option);
+      });
+    }
+
+    function currentYear() {
+      return archive.find((item) => item.year === yearSelect.value) || archive[0];
+    }
+
+    function currentMonth() {
+      const year = currentYear();
+      return year ? year.months.find((item) => item.month === monthSelect.value) || year.months[0] : null;
+    }
+
+    function refreshMonths() {
+      const year = currentYear();
+      fillSelect(monthSelect, year ? year.months : [], (item) => `${item.month} 月 · ${item.count} 篇`, (item) => item.month);
+      refreshDays();
+    }
+
+    function refreshDays() {
+      const month = currentMonth();
+      fillSelect(daySelect, month ? month.days : [], (item) => `${item.date} · ${item.title}`, (item) => item.date);
+    }
+
+    if (archive.length) {
+      fillSelect(yearSelect, archive, (item) => `${item.year} · ${item.count} 篇`, (item) => item.year);
+      if (selectedDate) {
+        const [year, month] = selectedDate.split("-");
+        yearSelect.value = year;
+        refreshMonths();
+        monthSelect.value = month;
+        refreshDays();
+        daySelect.value = selectedDate;
+      } else {
+        refreshMonths();
+      }
+      yearSelect.addEventListener("change", refreshMonths);
+      monthSelect.addEventListener("change", refreshDays);
+    } else {
+      [yearSelect, monthSelect, daySelect].forEach((select) => {
+        select.innerHTML = '<option value="">暂无日记</option>';
+        select.disabled = true;
+      });
+    }
+  </script>
 </body>
 </html>

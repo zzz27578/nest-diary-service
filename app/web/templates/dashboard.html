@@ -23,20 +23,19 @@
         <img src="/static/nest-avatar.png" alt="小窝头像">
         <div>
           <p>Bot 的私密日记巢穴</p>
-          <strong>日记、人物印象、媒体证据和修订历史都在这里沉淀。</strong>
+          <strong>日记、人物印象、媒体证据和检索入口都在这里沉淀。</strong>
         </div>
       </section>
 
       <section class="stats">
         <a href="/diary"><span>{{ entries_count }}</span><small>日记</small></a>
         <a href="/media"><span>{{ media_count }}</span><small>媒体</small></a>
-        <a href="/revisions"><span>{{ revisions_count }}</span><small>修订</small></a>
         <a href="/impressions"><span>{{ people_count }}</span><small>人物印象</small></a>
       </section>
 
       <section class="panel-grid">
-        <a class="panel" href="/write"><span>写入</span><small>手动补记或修订</small></a>
-        <a class="panel" href="/search"><span>搜索</span><small>按关键词找回忆</small></a>
+        <a class="panel" href="/write"><span>写入</span><small>手动补记或编辑</small></a>
+        <a class="panel" href="/search"><span>搜索</span><small>按关键词找回记忆</small></a>
         <a class="panel" href="/diary"><span>日记</span><small>按日期浏览内容</small></a>
         <a class="panel" href="/impressions"><span>印象</span><small>维护人物长期认识</small></a>
       </section>
@@ -57,7 +56,7 @@
             <span>{{ year.count }} 篇</span>
             <div>
               {% for month in year.months %}
-              <a href="/search?q={{ year.year }}-{{ month.month }}">{{ month.month }}月 · {{ month.count }}</a>
+              <a href="/diary?date={{ month.days[0].date }}">{{ month.month }} 月 · {{ month.count }}</a>
               {% endfor %}
             </div>
           </div>
@@ -84,7 +83,7 @@
           {% endfor %}
         </div>
         {% else %}
-        <p class="muted">还没有日记。等 bot 写第一篇，小窝就会亮起来。</p>
+        <p class="muted">还没有日记。等 bot 写下第一篇，小窝就会亮起来。</p>
         {% endif %}
       </section>
     </section>

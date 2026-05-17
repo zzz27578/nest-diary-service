@@ -111,6 +111,27 @@
       <section class="section">
         <div class="section-title">
           <div>
+            <p class="eyebrow">Backup</p>
+            <h2>导入导出</h2>
+          </div>
+        </div>
+        <div class="form-actions">
+          <a class="primary-action" href="/settings/export">导出小窝备份</a>
+          <span class="muted">导出包含日记、人物印象、媒体和设置。</span>
+        </div>
+        <form class="upload-zone" method="post" action="/settings/import" enctype="multipart/form-data">
+          <input id="backupFile" name="backup_file" type="file" accept=".zip" required>
+          <label for="backupFile">
+            <strong>拖入或选择 ZIP 备份</strong>
+            <span>只会导入 diary、memory、media、settings、imports 目录。</span>
+          </label>
+          <button type="submit">导入备份</button>
+        </form>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <div>
             <p class="eyebrow">Version</p>
             <h2>版本更新</h2>
           </div>
@@ -131,7 +152,7 @@
             <button type="submit" {{ '' if version_service and version_service.enable_self_update else 'disabled' }}>更新版本</button>
           </form>
           {% if not version_service or not version_service.enable_self_update %}
-          <span class="muted">Docker / 1Panel 部署请在面板或 compose 中拉取新镜像并重建容器。git 自更新需设置 NEST_ENABLE_SELF_UPDATE=true。</span>
+          <span class="muted">Docker / 1Panel 部署请在面板或 compose 中拉取新镜像并重建容器。Git 自更新需要设置 NEST_ENABLE_SELF_UPDATE=true。</span>
           {% endif %}
         </div>
       </section>
@@ -140,7 +161,7 @@
         <div class="section-title">
           <div>
             <p class="eyebrow">AstrBot Plugin</p>
-            <h2>插件设置入口</h2>
+            <h2>插件配置入口</h2>
           </div>
         </div>
         <p class="muted">下面这些属于 AstrBot 插件仓库配置，需要在 AstrBot 插件配置页修改，不在本体网站保存：服务地址、bot token、每日提示时间、提醒开关、目标会话 origin。</p>

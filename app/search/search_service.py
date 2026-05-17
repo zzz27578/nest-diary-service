@@ -67,6 +67,11 @@ class SearchService:
                 (entry.date, entry.normalized_title(), entry.body),
             )
 
+    def delete_entry(self, date: str) -> None:
+        with self._connect() as conn:
+            conn.execute("DELETE FROM diary_meta WHERE date = ?", (date,))
+            conn.execute("DELETE FROM diary_fts WHERE date = ?", (date,))
+
     def search(self, query: str, top_k: int = 8) -> list[dict]:
         with self._connect() as conn:
             try:

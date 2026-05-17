@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .auth import verify_bearer_token_from_store
+from .backup_service import BackupService
 from .config import load_settings
 from .diary.diary_service import DiaryService
 from .memory.impression_service import ImpressionService
@@ -18,7 +19,7 @@ from .version_service import VersionService
 from .web.routes import create_web_router, mount_static
 from .web_auth import WebSessionAuth
 
-APP_VERSION = "0.2.1"
+APP_VERSION = "0.3.0"
 settings = load_settings()
 app = FastAPI(title="Nest Diary Service", version=APP_VERSION)
 paths = NestPaths(settings.data_dir)
@@ -26,6 +27,7 @@ diary_service = DiaryService(paths)
 media_service = MediaService(paths)
 impression_service = ImpressionService(paths)
 service_settings = ServiceSettingsStore(paths)
+backup_service = BackupService(paths)
 version_service = VersionService(
     current_version=APP_VERSION,
     repo_root=Path(__file__).resolve().parents[1],
@@ -53,6 +55,7 @@ app.include_router(
         security_settings,
         web_auth,
         version_service,
+        backup_service,
         settings,
     )
 )

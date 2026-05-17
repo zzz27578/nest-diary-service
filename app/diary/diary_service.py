@@ -30,6 +30,20 @@ class DiaryService:
     def read_by_date(self, date: str) -> DiaryEntry:
         return self.store.read(date)
 
+    def delete_diary(self, date: str, reason: str = "") -> bool:
+        diary_path = self.paths.diary_file(date)
+        if not diary_path.exists():
+            return False
+        self.revisions.snapshot(
+            date=date,
+            content=diary_path.read_text(encoding="utf-8"),
+            reason=reason or "delete diary entry",
+            source="delete_diary",
+        )
+        deleted = self.store.delete(date)
+        self.search_service.delete_entry(date)
+        return deleted
+
     def search(self, query: str, top_k: int = 8) -> list[dict]:
         return self.search_service.search(query=query, top_k=top_k)
 
@@ -38,3 +52,9 @@ class DiaryService:
 
     def archive_tree(self) -> list[dict]:
         return self.store.archive_tree()
+
+    def rebuild_index(self) -> int:
+        entries = self.store.list_entries()
+        for entry in entries:
+            self.search_service.upsert_entry(entry)
+        return len(entries)

@@ -68,6 +68,13 @@ class MarkdownDiaryStore:
                 continue
         return entries
 
+    def delete(self, date: str) -> bool:
+        path = self.paths.diary_file(date)
+        if not path.exists():
+            return False
+        path.unlink()
+        return True
+
     def archive_tree(self) -> list[dict]:
         years: list[dict] = []
         if not self.paths.diary_dir.exists():

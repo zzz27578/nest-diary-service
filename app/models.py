@@ -41,9 +41,9 @@ class ServiceUiSettings:
     allow_media_refs: bool = True
     show_impression_prompt: bool = True
     impression_prompt: str = (
-        "写完日记后，依据你自己的角色设定和当天日记内容判断："
+        "写完日记后，请依据你的角色设定和当天日记内容判断："
         "这篇日记是否提供了关于某个人的稳定新证据。"
-        "如果有，就更新人物印象；如果没有，不要硬写。"
+        "如果有，请更新人物印象；如果没有，不要硬写。"
     )
 
 

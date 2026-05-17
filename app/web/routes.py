@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -25,13 +25,13 @@ def create_web_router(
     security_store=None,
     web_auth=None,
     version_service=None,
+    backup_service=None,
     runtime_settings=None,
 ) -> APIRouter:
     router = APIRouter()
 
     def require_login(request: Request):
-        redirect = auth.redirect_if_missing(request.cookies.get("nest_session"))
-        return redirect
+        return auth.redirect_if_missing(request.cookies.get("nest_session"))
 
     @router.get("/", response_class=HTMLResponse)
     async def dashboard(request: Request):
@@ -40,14 +40,12 @@ def create_web_router(
             return redirect
         entries = diary_service.list_entries() if diary_service else []
         media = media_service.list_manifests() if media_service else []
-        revisions = revision_service.list_revisions() if revision_service else []
         return templates.TemplateResponse(
             request,
             "dashboard.html",
             {
                 "entries_count": len(entries),
                 "media_count": sum(len(item.get("assets", [])) for item in media),
-                "revisions_count": len(revisions),
                 "people_count": len(impression_service.list_people()) if impression_service else 0,
                 "recent_entries": entries[:5],
                 "active": "dashboard",
@@ -65,7 +63,7 @@ def create_web_router(
             return templates.TemplateResponse(
                 request,
                 "login.html",
-                {"error": "密码不对", "default_password": "12345678"},
+                {"error": "密码不正确", "default_password": "12345678"},
                 status_code=401,
             )
         response = RedirectResponse("/", status_code=303)
@@ -111,16 +109,11 @@ def create_web_router(
         return templates.TemplateResponse(
             request,
             "search.html",
-            {
-                "q": q,
-                "results": results,
-                "active": "search",
-                "archive": diary_service.archive_tree() if diary_service else [],
-            },
+            {"q": q, "results": results, "active": "search", "archive": diary_service.archive_tree() if diary_service else []},
         )
 
     @router.get("/diary", response_class=HTMLResponse)
-    async def diary_page(request: Request, date: str = "", error: str = ""):
+    async def diary_page(request: Request, date: str = "", saved: str = "", error: str = ""):
         redirect = require_login(request)
         if redirect:
             return redirect
@@ -139,6 +132,7 @@ def create_web_router(
             {
                 "entries": entries,
                 "selected_entry": selected_entry,
+                "saved": saved,
                 "error": error,
                 "active": "diary",
                 "archive": diary_service.archive_tree() if diary_service else [],
@@ -151,23 +145,7 @@ def create_web_router(
         if redirect:
             return redirect
         manifests = media_service.list_manifests() if media_service else []
-        return templates.TemplateResponse(
-            request,
-            "media.html",
-            {"manifests": manifests, "active": "media"},
-        )
-
-    @router.get("/revisions", response_class=HTMLResponse)
-    async def revisions_page(request: Request):
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        revisions = revision_service.list_revisions() if revision_service else []
-        return templates.TemplateResponse(
-            request,
-            "revisions.html",
-            {"revisions": revisions, "active": "revisions"},
-        )
+        return templates.TemplateResponse(request, "media.html", {"manifests": manifests, "active": "media"})
 
     @router.get("/impressions", response_class=HTMLResponse)
     async def impressions_page(request: Request, name: str = "", saved: str = "", error: str = ""):
@@ -181,13 +159,7 @@ def create_web_router(
         return templates.TemplateResponse(
             request,
             "impressions.html",
-            {
-                "people": people,
-                "selected_person": selected_person,
-                "saved": saved,
-                "error": error,
-                "active": "impressions",
-            },
+            {"people": people, "selected_person": selected_person, "saved": saved, "error": error, "active": "impressions"},
         )
 
     @router.get("/settings", response_class=HTMLResponse)
@@ -203,14 +175,12 @@ def create_web_router(
         redirect = require_login(request)
         if redirect:
             return redirect
-        ui_settings = settings_store.load() if settings_store else ServiceUiSettings()
-        security = security_store.load() if security_store else None
         return templates.TemplateResponse(
             request,
             "settings.html",
             {
-                "settings": ui_settings,
-                "security": security,
+                "settings": settings_store.load() if settings_store else ServiceUiSettings(),
+                "security": security_store.load() if security_store else None,
                 "runtime_settings": runtime_settings,
                 "version_service": version_service,
                 "version_message": version_message,
@@ -258,6 +228,18 @@ def create_web_router(
         diary_service.write_diary(entry, reason="web_admin_update")
         return RedirectResponse(f"/write?date={entry.date}&saved=1", status_code=303)
 
+    @router.post("/diary/delete")
+    async def delete_diary(request: Request, date: str = Form(...)):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        if not diary_service:
+            return RedirectResponse("/diary?error=diary-service-unavailable", status_code=303)
+        deleted = diary_service.delete_diary(date.strip(), reason="web_admin_delete")
+        if not deleted:
+            return RedirectResponse(f"/diary?error={quote(date + ' 没有找到日记')}", status_code=303)
+        return RedirectResponse("/diary?saved=1", status_code=303)
+
     @router.post("/panel/diary")
     async def save_diary_legacy(request: Request):
         return RedirectResponse("/write", status_code=303)
@@ -292,7 +274,7 @@ def create_web_router(
             notes=notes.strip(),
         )
         impression_service.save(item)
-        return RedirectResponse(f"/impressions?name={item.name}&saved=1", status_code=303)
+        return RedirectResponse(f"/impressions?name={quote(item.name)}&saved=1", status_code=303)
 
     @router.post("/settings")
     async def save_settings(
@@ -332,10 +314,7 @@ def create_web_router(
         if not security_store:
             return RedirectResponse("/settings?error=security-store-unavailable", status_code=303)
         token = security_store.generate_token() if generate_bot_api_token == "on" else bot_api_token.strip()
-        saved_security = security_store.update(
-            admin_password=admin_password.strip() or None,
-            bot_api_token=token,
-        )
+        saved_security = security_store.update(admin_password=admin_password.strip() or None, bot_api_token=token)
         if web_auth:
             web_auth.admin_password = saved_security.admin_password
             web_auth.session_secret = saved_security.bot_api_token or "development-session-secret"
@@ -375,6 +354,36 @@ def create_web_router(
         if result.output:
             detail = f"{detail}\n{result.output}"
         return RedirectResponse(f"/settings?{target}={quote(detail)}", status_code=303)
+
+    @router.get("/settings/export")
+    async def export_backup(request: Request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        if not backup_service:
+            return RedirectResponse("/settings?error=backup-service-unavailable", status_code=303)
+        content = backup_service.export_zip()
+        return Response(
+            content,
+            media_type="application/zip",
+            headers={"Content-Disposition": 'attachment; filename="nest-diary-backup.zip"'},
+        )
+
+    @router.post("/settings/import")
+    async def import_backup(request: Request, backup_file: UploadFile = File(...)):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        if not backup_service:
+            return RedirectResponse("/settings?error=backup-service-unavailable", status_code=303)
+        payload = await backup_file.read()
+        try:
+            result = backup_service.import_zip(payload)
+        except Exception as exc:
+            return RedirectResponse(f"/settings?error={quote('导入失败：' + str(exc))}", status_code=303)
+        indexed = diary_service.rebuild_index() if diary_service else 0
+        message = f"导入完成：{result['imported']} 个文件，跳过 {result['skipped']} 个文件，已重建 {indexed} 篇日记索引。"
+        return RedirectResponse(f"/settings?version_message={quote(message)}", status_code=303)
 
     return router
 
